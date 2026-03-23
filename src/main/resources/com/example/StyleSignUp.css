@@ -1,0 +1,94 @@
+/* signup.css */
+
+/* General body setup */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background of the page */
+.root {
+    -fx-background-color: #1d1339;
+}
+
+/* Owl icon glow effect */
+#owlIcon {
+    -fx-effect: dropshadow(gaussian, #fff, 10, 0.2, 0, 0);
+    -fx-fill: white;
+    -fx-font-size: 48px;
+    animation: owlGlow 2s infinite alternate;
+}
+
+@keyframes owlGlow {
+    0% {
+        -fx-fill: #ffffff;
+        -fx-effect: dropshadow(gaussian, #fff, 10, 0.2, 0, 0);
+    }
+    50% {
+        -fx-fill: #ff6f00;
+        -fx-effect: dropshadow(gaussian, #ff6f00, 15, 0.2, 0, 0);
+    }
+    100% {
+        -fx-fill: #d50000;
+        -fx-effect: dropshadow(gaussian, #d50000, 15, 0.2, 0, 0);
+    }
+}
+
+/* Transparent Table */
+.StackPane {
+    background-color: rgba(13, 5, 40, 0.8);
+    border-radius: 20px;
+    padding: 20px;
+}
+
+/* Border glow effect for the table */
+.Rectangle {
+    -fx-stroke: #ff6f00;
+    -fx-stroke-width: 2;
+    -fx-effect: dropshadow(gaussian, #ff6f00, 10, 0.3, 0, 0);
+}
+
+/* Glow effect for input fields */
+.TextField, .PasswordField {
+    -fx-background-color: transparent;
+    -fx-border-color: #7B2CFF;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #bcaeff;
+    -fx-effect: dropshadow(gaussian, #ff6f00, 5, 0.4, 0, 0);
+}
+
+.TextField:focused, .PasswordField:focused {
+    -fx-border-color: #ff6f00;
+    -fx-background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Button Glow */
+.Button {
+    -fx-background-color: linear-gradient(to bottom, #7B2CFF, #5D16CC);
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-family: 'Times New Roman';
+    -fx-border-color: #cdb7ff;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, #ff6f00, 10, 0.2, 0, 0);
+    transition: all 0.3s;
+}
+
+.Button:hover {
+    -fx-background-color: linear-gradient(to bottom, #ff6f00, #d50000);
+    -fx-effect: dropshadow(gaussian, #ff6f00, 20, 0.2, 0, 0);
+    transform: scale(1.1);
+}
+
+/* Input field labels */
+.Label {
+    -fx-text-fill: #d7cfff;
+    -fx-font-size: 12px;
+    -fx-font-family: 'Times New Roman';
+}

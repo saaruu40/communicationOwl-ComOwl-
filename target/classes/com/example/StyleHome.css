@@ -1,0 +1,18 @@
+/* Set general background */
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+}
+
+.list-cell:selected {
+    -fx-background-color: #3a1a5a;
+}
+
+.list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}

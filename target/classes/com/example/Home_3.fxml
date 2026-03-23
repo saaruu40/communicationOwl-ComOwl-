@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<fx:root prefHeight="800.0" prefWidth="1200.0" stylesheets="@StyleHome.css" type="AnchorPane" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.HomeController">
+
+   <BorderPane AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+
+
+      <top>
+         <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="15.0" style="-fx-background-color: #0d0528; -fx-border-color: #7B2CFF; -fx-border-width: 0 0 1 0;">
+            <padding>
+               <Insets left="20.0" right="20.0" />
+            </padding>
+
+            <!-- Logo -->
+            <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 22px; -fx-font-family: 'Times New Roman'; -fx-font-weight: bold;" text="PingOwl" />
+
+            <!-- Search Bar -->
+            <HBox alignment="CENTER" HBox.hgrow="ALWAYS">
+               <TextField fx:id="searchField" onKeyReleased="#onSearchTyped" prefHeight="35.0" prefWidth="300.0" promptText="🔍  Search users..." style="-fx-background-color: #1a0a3a; -fx-border-color: #7B2CFF; -fx-border-radius: 20; -fx-background-radius: 20; -fx-text-fill: white; -fx-prompt-text-fill: #bcaeff; -fx-padding: 0 15 0 15;" />
+            </HBox>
+
+
+            <HBox alignment="CENTER" spacing="15.0">
+
+               <!-- Friend Request Icon -->
+               <StackPane onMouseClicked="#showFriendRequests" style="-fx-cursor: hand;">
+                  <Label style="-fx-font-size: 22px;" text="👥" />
+                  <Label fx:id="requestBadge" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 10px; -fx-background-radius: 10; -fx-padding: 1 4 1 4;" visible="false" StackPane.alignment="TOP_RIGHT" />
+               </StackPane>
+
+               <!-- Notification Icon -->
+               <StackPane onMouseClicked="#showNotifications" style="-fx-cursor: hand;">
+                  <Label style="-fx-font-size: 22px;" text="🔔" />
+                  <Label fx:id="notificationBadge" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 10px; -fx-background-radius: 10; -fx-padding: 1 4 1 4;" visible="false" StackPane.alignment="TOP_RIGHT" />
+               </StackPane>
+
+               <!-- Profile Picture -->
+               <ImageView fx:id="profileImageView" fitHeight="40.0" fitWidth="40.0" onMouseClicked="#showProfile" preserveRatio="false" style="-fx-cursor: hand;" />
+
+               <!-- Name -->
+               <Label fx:id="userNameLabel" style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-family: 'Times New Roman';" />
+
+               <!-- Logout -->
+               <Button onMouseClicked="#logout" style="-fx-background-color: #3a1a5a; -fx-text-fill: #bcaeff; -fx-cursor: hand; -fx-border-color: #7B2CFF; -fx-border-radius: 4; -fx-background-radius: 4;" text="Logout" />
+            </HBox>
+         </HBox>
+      </top>
+
+      <!-- ═══════════════ LEFT SIDEBAR ═══════════════ -->
+      <left>
+         <VBox prefWidth="250.0" spacing="0.0" style="-fx-background-color: #0d0528; -fx-border-color: #7B2CFF; -fx-border-width: 0 1 0 0;">
+
+            <!-- Friend Requests Panel (hidden by default) -->
+            <VBox fx:id="requestPanel" managed="false" style="-fx-background-color: #1a0a3a; -fx-border-color: #7B2CFF; -fx-border-width: 0 0 1 0;" visible="false">
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+               <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 12px; -fx-font-family: 'Times New Roman';" text="FRIEND REQUESTS" />
+               <ListView fx:id="requestListView" prefHeight="150.0" style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+            </VBox>
+
+            <!-- Search Results Panel (hidden by default) -->
+            <VBox fx:id="searchResultPanel" managed="false" style="-fx-background-color: #1a0a3a; -fx-border-color: #7B2CFF; -fx-border-width: 0 0 1 0;" visible="false">
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+               <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 12px; -fx-font-family: 'Times New Roman';" text="SEARCH RESULTS" />
+               <ListView fx:id="searchResultListView" prefHeight="200.0" style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+            </VBox>
+
+            <!-- Friends List -->
+            <VBox VBox.vgrow="ALWAYS">
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+               <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 12px; -fx-font-family: 'Times New Roman';" text="FRIENDS" />
+               <ListView fx:id="friendListView" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS" />
+            </VBox>
+         </VBox>
+      </left>
+
+      <!-- ═══════════════ CENTER (Chat Area) ═══════════════ -->
+      <center>
+         <VBox alignment="CENTER" style="-fx-background-color: #120838;">
+            <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 18px; -fx-font-family: 'Times New Roman';" text="👈 Select a friend to start chatting" />
+         </VBox>
+      </center>
+
+   </BorderPane>
+
+</fx:root>

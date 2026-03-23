@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.HomeController">
+    <!-- Background Image -->
+    <ImageView fx:id="backgroundImage" fitHeight="800" fitWidth="1200" preserveRatio="true" pickOnBounds="true">
+        <ImageView.image>
+            <Image url="@com/example/Images/BG.png"/>
+        </ImageView.image>
+    </ImageView>
+    
+    <!-- Logo Image Instead of Text -->
+    <ImageView fx:id="logoImage" layoutX="400" layoutY="150" fitHeight="100" fitWidth="400">
+        <ImageView.image>
+            <Image url="@com/example/Images/RunnerLikha.png"/>
+        </ImageView.image>
+    </ImageView>
+    
+    <!-- Start Button -->
+    <ImageView fx:id="startButton" layoutX="500" layoutY="400" fitHeight="50" fitWidth="200" onMouseClicked="#onStartClick">
+        <ImageView.image>
+            <Image url="@com/example/Images/Start_Button.png"/>
+        </ImageView.image>
+    </ImageView>
+</AnchorPane>
