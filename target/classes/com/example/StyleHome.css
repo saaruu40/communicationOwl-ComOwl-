@@ -1,16 +1,17 @@
 /* Set general background */
 .list-cell {
     -fx-background-color: transparent;
-    -fx-text-fill: white;
+    -fx-text-fill: #e8deff;
 }
 
 .list-cell:selected {
-    -fx-background-color: #3a1a5a;
+    -fx-background-color: #4d2b83;
+    -fx-text-fill: #ffffff;
 }
 
 .list-view {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
+    -fx-background-color: rgba(18, 8, 43, 0.5);
+    -fx-border-color: rgba(145, 85, 255, 0.75);
 }
 
 .scroll-bar {

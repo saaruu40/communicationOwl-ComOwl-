@@ -68,7 +68,38 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>${main.class}</mainClass>
+                    <module>com.example</module>
+                    <options>
+                        <option>--enable-native-access=ALL-UNNAMED,javafx.graphics</option>
+                        <option>-XX:+IgnoreUnrecognizedVMOptions</option>
+                        <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                        <option>--add-opens=java.base/java.nio=ALL-UNNAMED</option>
+                        <option>--add-opens=javafx.graphics/com.sun.glass.utils=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
+            </plugin>
+
+            <!-- Create fat JAR with all dependencies (for server) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.codes.server.Server</mainClass>
+                                </transformer>
+                            </transformers>
+                            <finalName>server</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

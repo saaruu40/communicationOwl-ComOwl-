@@ -1,93 +1,60 @@
 /* signup.css */
 
-/* General body setup */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 /* Background of the page */
 .root {
-    -fx-background-color: #1d1339;
+    -fx-background-color: #100720;
 }
 
-/* Owl icon glow effect */
-#owlIcon {
-    -fx-effect: dropshadow(gaussian, #fff, 10, 0.2, 0, 0);
-    -fx-fill: white;
-    -fx-font-size: 48px;
-    animation: owlGlow 2s infinite alternate;
+/* Transparent panel effect */
+StackPane {
+    -fx-background-color: rgba(19, 4, 45, 0.85);
+    -fx-background-radius: 22;
+    -fx-padding: 22;
 }
 
-@keyframes owlGlow {
-    0% {
-        -fx-fill: #ffffff;
-        -fx-effect: dropshadow(gaussian, #fff, 10, 0.2, 0, 0);
-    }
-    50% {
-        -fx-fill: #ff6f00;
-        -fx-effect: dropshadow(gaussian, #ff6f00, 15, 0.2, 0, 0);
-    }
-    100% {
-        -fx-fill: #d50000;
-        -fx-effect: dropshadow(gaussian, #d50000, 15, 0.2, 0, 0);
-    }
-}
-
-/* Transparent Table */
-.StackPane {
-    background-color: rgba(13, 5, 40, 0.8);
-    border-radius: 20px;
-    padding: 20px;
-}
-
-/* Border glow effect for the table */
-.Rectangle {
-    -fx-stroke: #ff6f00;
+/* Border glow effect for the panel */
+Rectangle {
+    -fx-stroke: #9966ff;
     -fx-stroke-width: 2;
-    -fx-effect: dropshadow(gaussian, #ff6f00, 10, 0.3, 0, 0);
+    -fx-effect: dropshadow(gaussian, #9966ff, 16, 0.3, 0, 0);
 }
 
 /* Glow effect for input fields */
-.TextField, .PasswordField {
-    -fx-background-color: transparent;
-    -fx-border-color: #7B2CFF;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #bcaeff;
-    -fx-effect: dropshadow(gaussian, #ff6f00, 5, 0.4, 0, 0);
+TextField, PasswordField {
+    -fx-background-color: rgba(30, 8, 60, 0.35);
+    -fx-border-color: #aa77ff;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #f6f0ff;
+    -fx-prompt-text-fill: #c1aaff;
+    -fx-effect: dropshadow(gaussian, #9b55ff, 10, 0.4, 0, 0);
 }
 
-.TextField:focused, .PasswordField:focused {
-    -fx-border-color: #ff6f00;
-    -fx-background-color: rgba(0, 0, 0, 0.6);
+TextField:focused, PasswordField:focused {
+    -fx-border-color: #d294ff;
+    -fx-background-color: rgba(35, 9, 80, 0.55);
 }
 
 /* Button Glow */
-.Button {
-    -fx-background-color: linear-gradient(to bottom, #7B2CFF, #5D16CC);
-    -fx-text-fill: white;
-    -fx-font-size: 22px;
+Button {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #8a5dfb 0%, #5d2dd9 100%);
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 18px;
     -fx-font-family: 'Times New Roman';
-    -fx-border-color: #cdb7ff;
+    -fx-border-color: #beb4ff;
     -fx-border-width: 1;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, #ff6f00, 10, 0.2, 0, 0);
-    transition: all 0.3s;
+    -fx-effect: dropshadow(gaussian, #8a5dfb, 14, 0.32, 0, 0);
 }
-
-.Button:hover {
+Button:hover {
     -fx-background-color: linear-gradient(to bottom, #ff6f00, #d50000);
     -fx-effect: dropshadow(gaussian, #ff6f00, 20, 0.2, 0, 0);
-    transform: scale(1.1);
 }
 
 /* Input field labels */
-.Label {
+Label {
     -fx-text-fill: #d7cfff;
     -fx-font-size: 12px;
     -fx-font-family: 'Times New Roman';

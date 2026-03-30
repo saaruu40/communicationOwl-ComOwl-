@@ -27,10 +27,13 @@ public class App extends Application {
     private static Parent loadFXML(String fxml) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(
                 App.class.getResource("/com/example/" + fxml + ".fxml"));
-
-        // fx:root টাইপের FXML হ্যান্ডেল করার জন্য
-        fxmlLoader.setRoot(new javafx.scene.layout.AnchorPane());
-
+        
+        // Only set root for FXML files that use fx:root (SignIn, SignUp, etc.)
+        if (fxml.equals("SignIn") || fxml.equals("SignUp") || 
+            fxml.equals("ForgetPassword") || fxml.equals("ResetPassword")) {
+            fxmlLoader.setRoot(new javafx.scene.layout.AnchorPane());
+        }
+        
         return fxmlLoader.load();
     }
 

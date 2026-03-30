@@ -24,64 +24,79 @@ public class SignInController {
         String password = passwordField.getText();
 
         if (email.isEmpty() || password.isEmpty()) {
-            errorMessage.setText("Please enter both email and password.");
-            errorMessage.setVisible(true);
+            showError("Please enter both email and password.");
             return;
         }
 
         String response = SocketClient.send("LOGIN|" + email + "|" + password);
 
-        if (response != null && response.startsWith("LOGIN_SUCCESS")) {
-            String firstName = response.split("\\|", 2)[1];
-            HomeController.currentEmail     = email;
-            HomeController.currentFirstName = firstName;
+        if (response == null || response.equals("CONNECTION_ERROR")) {
+            showError("Cannot reach the server. Please start the server and try again.");
+            return;
+        }
 
-            errorMessage.setVisible(false);
-            System.out.println("Welcome, " + firstName + "!");
+        if (response.startsWith("LOGIN_SUCCESS")) {
+            String[] parts   = response.split("\\|", 2);
+            String firstName = (parts.length > 1 && !parts[1].isBlank()) ? parts[1] : email;
+
+            SocketClient.establishPersistentConnection(email);
+
             try {
                 Stage stage = (Stage) signInButton.getScene().getWindow();
+
+                // No setRoot() — ChatRoom.fxml has its own normal root
                 FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/Home_3.fxml"));
-                loader.setRoot(new AnchorPane());
-                stage.setScene(new Scene(loader.load()));
+                        getClass().getResource("/com/example/ChatRoom.fxml"));
+                AnchorPane root = loader.load();
+
+                ChatRoomController chatController = loader.getController();
+                chatController.setCurrentUserInfo(email, firstName);
+
+                stage.setScene(new Scene(root));
+                stage.setOnCloseRequest(e -> chatController.cleanup());
                 stage.show();
+
             } catch (IOException e) {
                 e.printStackTrace();
+                showError("Could not load chat screen: " + e.getMessage());
             }
-        } else if ("CONNECTION_ERROR".equals(response)) {
-            errorMessage.setText("Cannot reach the server. Please try again later.");
-            errorMessage.setVisible(true);
+
+        } else if (response.startsWith("LOGIN_FAILED")) {
+            String[] parts = response.split("\\|", 2);
+            showError(parts.length > 1 && !parts[1].isBlank()
+                    ? parts[1] : "Invalid email or password.");
         } else {
-            errorMessage.setText("Invalid email or password.");
-            errorMessage.setVisible(true);
+            showError("Invalid email or password.");
         }
     }
 
     @FXML
     private void goToSignUp() {
-        try {
-            Stage stage = (Stage) signInButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/SignUp.fxml"));
-            loader.setRoot(new AnchorPane());
-            stage.setScene(new Scene(loader.load()));
-            stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        navigateTo("/com/example/SignUp.fxml", true);
     }
 
     @FXML
     private void goToForgotPassword() {
+        navigateTo("/com/example/ForgetPassword.fxml", true);
+    }
+
+    // useRoot=true  → FXML uses <fx:root>, must call setRoot()
+    // useRoot=false → FXML has normal <AnchorPane> root, no setRoot()
+    private void navigateTo(String fxmlPath, boolean useRoot) {
         try {
             Stage stage = (Stage) signInButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/ForgetPassword.fxml"));
-            loader.setRoot(new AnchorPane());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            if (useRoot) loader.setRoot(new AnchorPane());
             stage.setScene(new Scene(loader.load()));
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
+            showError("Could not load screen.");
         }
+    }
+
+    private void showError(String message) {
+        errorMessage.setText(message);
+        errorMessage.setVisible(true);
     }
 }

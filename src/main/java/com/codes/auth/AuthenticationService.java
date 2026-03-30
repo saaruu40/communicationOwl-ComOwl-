@@ -32,7 +32,7 @@ public class AuthenticationService {
 
 
         String sql = """
-    INSERT INTO Users (firstName, lastName, email, password, 
+    INSERT INTO Users (firstName, lastName, email, password,
                        recoveryQuestion, recoveryAnswer, profilePicture)
     VALUES (?, ?, ?, ?, ?, ?, ?)
 """;
@@ -115,7 +115,6 @@ public class AuthenticationService {
         }
     }
 
-
     // Check recovery answer
     public boolean checkRecoveryAnswer(String email, String answer) {
         String sql = "SELECT recoveryAnswer FROM Users WHERE email = ?";
@@ -137,7 +136,6 @@ public class AuthenticationService {
             return false;
         }
     }
-
 
 
     // User Search by email or name
@@ -166,7 +164,8 @@ public class AuthenticationService {
                 if (sb.length() > 0) sb.append(",");
                 sb.append(rs.getString("email"))
                         .append(":").append(rs.getString("firstName"))
-                        .append(":").append(rs.getString("lastName"));
+                        .append(":").append(rs.getString("lastName"))
+                        .append(":").append(rs.getString("profilePicture") != null ? rs.getString("profilePicture") : "");
             }
             return sb.length() > 0 ? sb.toString() : "EMPTY";
 
@@ -227,10 +226,6 @@ public class AuthenticationService {
         }
     }
 
-
-
-
-
     // Send Friend Request
     public String sendFriendRequest(String senderEmail, String receiverEmail) {
         // Cannot send a request to yourself
@@ -254,8 +249,8 @@ public class AuthenticationService {
 
         // Check whether a request or friendship already exists
         String checkFriendSql = """
-        SELECT status FROM Friends 
-        WHERE (email1 = ? AND email2 = ?) 
+        SELECT status FROM Friends
+        WHERE (email1 = ? AND email2 = ?)
         OR (email1 = ? AND email2 = ?)
     """;
         try (Connection conn = DatabaseManager.getConnection();
@@ -321,7 +316,7 @@ public class AuthenticationService {
     // Cancel Friend Request / Unfriend
     public boolean declineFriendRequest(String senderEmail, String receiverEmail) {
         String sql = """
-        DELETE FROM Friends 
+        DELETE FROM Friends
         WHERE (email1 = ? AND email2 = ?)
         OR (email1 = ? AND email2 = ?)
     """;
@@ -379,7 +374,7 @@ public class AuthenticationService {
             CASE WHEN f.email1 = ? THEN u.email = f.email2
                  ELSE u.email = f.email1 END
         )
-        WHERE (f.email1 = ? OR f.email2 = ?) 
+        WHERE (f.email1 = ? OR f.email2 = ?)
         AND f.status = 'accepted'
     """;
         try (Connection conn = DatabaseManager.getConnection();
@@ -396,6 +391,547 @@ public class AuthenticationService {
                 sb.append(rs.getString("email"))
                         .append(":").append(rs.getString("firstName"))
                         .append(":").append(rs.getString("lastName"));
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    // Get All Users (excluding current user)
+    public String getAllUsers(String currentUserEmail) {
+        String sql = """
+        SELECT email, firstName, lastName, profilePicture
+        FROM Users
+        WHERE email != ?
+    """;
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, currentUserEmail);
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(rs.getString("email"))
+                        .append(":").append(rs.getString("firstName"))
+                        .append(":").append(rs.getString("lastName"))
+                        .append(":").append(rs.getString("profilePicture") != null ? rs.getString("profilePicture") : "");
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    public boolean sendMessage(String senderEmail, String receiverEmail, String message) {
+
+    String sql = """
+        INSERT INTO Messages (senderEmail, receiverEmail, content)
+        VALUES (?, ?, ?)
+    """;
+
+    try (Connection conn = DatabaseManager.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, senderEmail);
+        pstmt.setString(2, receiverEmail);
+        pstmt.setString(3, message);
+
+        return pstmt.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+    // Get all private messages between two users (pipe-delimited, safe for message content)
+    // Response format per line:  senderEmail|content|timestamp|text
+    public String getMessages(String email1, String email2) {
+
+        String sql = """
+            SELECT senderEmail, content, timestamp
+            FROM Messages
+            WHERE (senderEmail = ? AND receiverEmail = ?)
+            OR (senderEmail = ? AND receiverEmail = ?)
+            ORDER BY timestamp
+        """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email1);
+            pstmt.setString(2, email2);
+            pstmt.setString(3, email2);
+            pstmt.setString(4, email1);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(rs.getString("content"))
+                  .append("|")
+                  .append(rs.getString("timestamp"))
+                  .append("|text");
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    // Get only private messages AFTER a given timestamp (incremental polling)
+    // Response format per line:  senderEmail|content|timestamp|text
+    public String getMessagesSince(String email1, String email2, String sinceTimestamp) {
+
+        String sql = """
+            SELECT senderEmail, content, timestamp
+            FROM Messages
+            WHERE ((senderEmail = ? AND receiverEmail = ?)
+               OR  (senderEmail = ? AND receiverEmail = ?))
+            AND timestamp > ?
+            ORDER BY timestamp
+        """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email1);
+            pstmt.setString(2, email2);
+            pstmt.setString(3, email2);
+            pstmt.setString(4, email1);
+            pstmt.setString(5, sinceTimestamp);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(rs.getString("content"))
+                  .append("|")
+                  .append(rs.getString("timestamp"))
+                  .append("|text");
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+    public boolean createGroup(String groupId, String groupName, String creatorEmail) {
+
+        String sql = "INSERT INTO Groups (groupId, groupName, creatorEmail) VALUES (?, ?, ?)";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, groupName);
+            pstmt.setString(3, creatorEmail);
+
+            pstmt.executeUpdate();
+
+            String memberSql = "INSERT INTO GroupMembers (groupId, memberEmail) VALUES (?, ?)";
+
+            try (PreparedStatement stmt = conn.prepareStatement(memberSql)) {
+
+                stmt.setString(1, groupId);
+                stmt.setString(2, creatorEmail);
+                stmt.executeUpdate();
+            }
+
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** True if {@code email} is a row in GroupMembers for this group. */
+    public boolean isGroupMember(String groupId, String email) {
+        String sql = """
+            SELECT 1 FROM GroupMembers WHERE groupId = ? AND memberEmail = ?
+            """;
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, email);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean userExists(String email) {
+        String sql = "SELECT 1 FROM Users WHERE email = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, email);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Adds {@code newMemberEmail} if {@code requesterEmail} is already a member and the new user exists.
+     */
+    /**
+     * Group name and optional profile picture (base64) for members only.
+     * Returns: {@code name|pictureBase64} with picture possibly empty, or NOT_MEMBER / ERROR.
+     */
+    public String getGroupInfo(String groupId, String requesterEmail) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        String sql = """
+            SELECT groupName, groupPicture FROM Groups WHERE groupId = ?
+            """;
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupId);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) return "ERROR";
+            String name = rs.getString("groupName");
+            String pic = rs.getString("groupPicture");
+            if (pic == null) pic = "";
+            return name + "|" + pic;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    public boolean updateGroupName(String groupId, String requesterEmail, String newName) {
+        if (newName == null || newName.isBlank() || newName.contains("|")) return false;
+        if (!isGroupMember(groupId, requesterEmail)) return false;
+
+        String sql = "UPDATE Groups SET groupName = ? WHERE groupId = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newName.trim());
+            pstmt.setString(2, groupId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateGroupPicture(String groupId, String requesterEmail, String pictureBase64) {
+        if (!isGroupMember(groupId, requesterEmail)) return false;
+        if (pictureBase64 == null) pictureBase64 = "";
+
+        String sql = "UPDATE Groups SET groupPicture = ? WHERE groupId = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, pictureBase64.isBlank() ? null : pictureBase64);
+            pstmt.setString(2, groupId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Users that can be invited when creating a group (no group id yet). Excludes only {@code requesterEmail}.
+     * SQL LIKE on firstName, lastName, and email; empty query matches all.
+     */
+    public String searchUsersForInvite(String requesterEmail, String query) {
+        if (query == null) query = "";
+        String pattern = "%" + query.trim() + "%";
+
+        String sql = """
+            SELECT u.email, u.firstName, u.lastName, u.profilePicture
+            FROM Users u
+            WHERE u.email != ?
+            AND (u.firstName LIKE ? OR u.lastName LIKE ? OR u.email LIKE ?)
+            ORDER BY u.firstName, u.lastName
+            LIMIT 300
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, requesterEmail);
+            pstmt.setString(2, pattern);
+            pstmt.setString(3, pattern);
+            pstmt.setString(4, pattern);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(rs.getString("email"))
+                        .append(":").append(rs.getString("firstName"))
+                        .append(":").append(rs.getString("lastName"))
+                        .append(":").append(rs.getString("profilePicture") != null
+                        ? rs.getString("profilePicture") : "");
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    /**
+     * Users eligible to be added to a group: not self, not already a member.
+     * Filters with SQL LIKE on firstName, lastName, and email (empty search uses {@code %%} = all).
+     */
+    public String searchUsersForGroupAdd(String groupId, String requesterEmail, String query) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        if (query == null) query = "";
+        String pattern = "%" + query.trim() + "%";
+
+        String sql = """
+            SELECT u.email, u.firstName, u.lastName, u.profilePicture
+            FROM Users u
+            WHERE u.email != ?
+            AND NOT EXISTS (
+                SELECT 1 FROM GroupMembers gm
+                WHERE gm.groupId = ? AND gm.memberEmail = u.email
+            )
+            AND (u.firstName LIKE ? OR u.lastName LIKE ? OR u.email LIKE ?)
+            ORDER BY u.firstName, u.lastName
+            LIMIT 300
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, requesterEmail);
+            pstmt.setString(2, groupId);
+            pstmt.setString(3, pattern);
+            pstmt.setString(4, pattern);
+            pstmt.setString(5, pattern);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(rs.getString("email"))
+                        .append(":").append(rs.getString("firstName"))
+                        .append(":").append(rs.getString("lastName"))
+                        .append(":").append(rs.getString("profilePicture") != null
+                        ? rs.getString("profilePicture") : "");
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    public boolean addGroupMember(String groupId, String requesterEmail, String newMemberEmail) {
+        if (newMemberEmail == null || newMemberEmail.isBlank()) return false;
+        if (!isGroupMember(groupId, requesterEmail)) return false;
+        if (!userExists(newMemberEmail)) return false;
+        if (isGroupMember(groupId, newMemberEmail)) return true;
+
+        String sql = "INSERT INTO GroupMembers (groupId, memberEmail) VALUES (?, ?)";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, newMemberEmail);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean sendGroupMessage(String groupId, String senderEmail, String message) {
+        if (!isGroupMember(groupId, senderEmail)) return false;
+
+        String sql = """
+            INSERT INTO GroupMessages (groupId, senderEmail, message)
+            VALUES (?, ?, ?)
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, senderEmail);
+            pstmt.setString(3, message);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Get all group messages (pipe-delimited, safe for message content)
+    // Response format per line:  senderEmail|message|timestamp
+    public String getGroupMessages(String groupId, String requesterEmail) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        String sql = """
+            SELECT senderEmail, message, timestamp
+            FROM GroupMessages
+            WHERE groupId = ?
+            ORDER BY timestamp
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(rs.getString("message"))
+                  .append("|")
+                  .append(rs.getString("timestamp"));
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    // Get only group messages AFTER a given timestamp (incremental polling)
+    // Response format per line:  senderEmail|message|timestamp
+    public String getGroupMessagesSince(String groupId, String sinceTimestamp, String requesterEmail) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        String sql = """
+            SELECT senderEmail, message, timestamp
+            FROM GroupMessages
+            WHERE groupId = ?
+            AND timestamp > ?
+            ORDER BY timestamp
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, sinceTimestamp);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(rs.getString("message"))
+                  .append("|")
+                  .append(rs.getString("timestamp"));
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    /**
+     * Members of a group (only for current members). Format per entry: email:firstName:lastName
+     * Uses LEFT JOIN so every GroupMembers row appears even if Users row is missing (FK off / legacy data).
+     */
+    public String getGroupMembers(String groupId, String requesterEmail) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        String sql = """
+            SELECT gm.memberEmail, u.firstName, u.lastName
+            FROM GroupMembers gm
+            LEFT JOIN Users u ON u.email = gm.memberEmail
+            WHERE gm.groupId = ?
+            ORDER BY COALESCE(u.firstName, ''), COALESCE(u.lastName, ''), gm.memberEmail
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                String em = rs.getString("memberEmail");
+                if (em == null || em.isBlank()) continue;
+                if (sb.length() > 0) sb.append(",");
+                String fn = rs.getString("firstName");
+                String ln = rs.getString("lastName");
+                if (fn == null) fn = "";
+                if (ln == null) ln = "";
+                sb.append(em)
+                  .append(":")
+                  .append(fn)
+                  .append(":")
+                  .append(ln);
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    // Get all groups a user is a member of
+    // Response format:  groupId1:groupName1,groupId2:groupName2,...
+    public String getMyGroups(String memberEmail) {
+
+        String sql = """
+            SELECT g.groupId, g.groupName
+            FROM Groups g
+            JOIN GroupMembers gm ON g.groupId = gm.groupId
+            WHERE gm.memberEmail = ?
+            ORDER BY g.createdAt DESC
+        """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, memberEmail);
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(rs.getString("groupId"))
+                  .append(":")
+                  .append(rs.getString("groupName"));
             }
             return sb.length() > 0 ? sb.toString() : "EMPTY";
 

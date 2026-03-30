@@ -13,11 +13,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Base64;
 
 public class SignUpController {
 
@@ -95,41 +92,49 @@ public class SignUpController {
 
     @FXML
     public void SignUpHandle() {
-        if (firstNameField.getText().isEmpty() || lastNameField.getText().isEmpty() ||
-                emailField.getText().isEmpty() || passwordField.getText().isEmpty() ||
-                confirmPasswordField.getText().isEmpty() || recoveryQuestionField.getText().isEmpty() ||
-                recoveryAnswerField.getText().isEmpty()) {
-            showError("All fields must be filled.");
-            return;
-        }
+        try {
+            System.out.println("SignUpHandle clicked");
+            if (firstNameField.getText().isEmpty() || lastNameField.getText().isEmpty() ||
+                    emailField.getText().isEmpty() || passwordField.getText().isEmpty() ||
+                    confirmPasswordField.getText().isEmpty() || recoveryQuestionField.getText().isEmpty() ||
+                    recoveryAnswerField.getText().isEmpty()) {
+                showError("All fields must be filled.");
+                return;
+            }
 
-        if (!passwordField.getText().equals(confirmPasswordField.getText())) {
-            showError("Passwords do not match.");
-            return;
-        }
+            if (!passwordField.getText().equals(confirmPasswordField.getText())) {
+                showError("Passwords do not match.");
+                return;
+            }
 
-        String command = String.join("|",
-                "SIGNUP",
-                firstNameField.getText().trim(),
-                lastNameField.getText().trim(),
-                emailField.getText().trim(),
-                passwordField.getText(),
-                confirmPasswordField.getText(),
-                recoveryQuestionField.getText().trim(),
-                recoveryAnswerField.getText().trim(),
-                profilePictureBase64  // If empty, null will be saved on the server
-        );
+            String command = String.join("|",
+                    "SIGNUP",
+                    firstNameField.getText().trim(),
+                    lastNameField.getText().trim(),
+                    emailField.getText().trim(),
+                    passwordField.getText(),
+                    confirmPasswordField.getText(),
+                    recoveryQuestionField.getText().trim(),
+                    recoveryAnswerField.getText().trim(),
+                    profilePictureBase64  // If empty, null will be saved on the server
+            );
 
-        String response = SocketClient.send(command);
+            System.out.println("SIGNUP command: " + command);
+            String response = SocketClient.send(command);
+            System.out.println("SIGNUP response: " + response);
 
-        if ("SIGNUP_SUCCESS".equals(response)) {
-            goToSignIn();
-        } else if ("CONNECTION_ERROR".equals(response)) {
-            showError("Cannot reach the server.");
-        } else {
-            showError(response != null && response.contains("|")
-                    ? response.split("\\|", 2)[1]
-                    : "Sign-up failed. Email may already exist.");
+            if ("SIGNUP_SUCCESS".equals(response)) {
+                goToSignIn();
+            } else if ("CONNECTION_ERROR".equals(response)) {
+                showError("Cannot reach the server.");
+            } else {
+                showError(response != null && response.contains("|")
+                        ? response.split("\\|", 2)[1]
+                        : "Sign-up failed. Email may already exist.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("An unexpected error occurred during signup. Check console.");
         }
     }
 

@@ -1,11 +1,11 @@
 
 module com.example {
-    requires javafx.controls;
-    requires javafx.fxml;
-    requires javafx.graphics;
-    requires javafx.swing;
+    requires transitive javafx.controls;
+    requires transitive javafx.fxml;
+    requires transitive javafx.graphics;
+    requires transitive javafx.swing;
 
-    requires java.sql;
+    requires transitive java.sql;
     requires org.xerial.sqlitejdbc;
 
     opens com.example to javafx.fxml;

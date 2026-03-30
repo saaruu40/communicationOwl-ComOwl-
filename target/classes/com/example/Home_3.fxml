@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<fx:root prefHeight="800.0" prefWidth="1200.0" stylesheets="@StyleHome.css" type="AnchorPane" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.HomeController">
+<AnchorPane prefHeight="800.0" prefWidth="1200.0" stylesheets="@StyleHome.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.HomeController">
 
    <BorderPane AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
@@ -45,6 +45,12 @@
                   <Label style="-fx-font-size: 22px;" text="🔔" />
                   <Label fx:id="notificationBadge" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 10px; -fx-background-radius: 10; -fx-padding: 1 4 1 4;" visible="false" StackPane.alignment="TOP_RIGHT" />
                </StackPane>
+               
+               <!-- Notification Panel (initially hidden) -->
+               <VBox fx:id="notificationPanel" managed="false" visible="false" style="-fx-background-color: #1a0a3a; -fx-border-color: #7B2CFF; -fx-border-width: 0 0 1 0;" spacing="8" padding="10">
+                  <Label style="-fx-text-fill: #bcaeff; -fx-font-size: 12px; -fx-font-family: 'Times New Roman';" text="NOTIFICATIONS" />
+                  <ListView fx:id="notificationListView" prefHeight="150.0" style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+               </VBox>
 
                <!-- Profile Picture -->
                <ImageView fx:id="profileImageView" fitHeight="40.0" fitWidth="40.0" onMouseClicked="#showProfile" preserveRatio="false" style="-fx-cursor: hand;" />
@@ -100,4 +106,4 @@
 
    </BorderPane>
 
-</fx:root>
+</AnchorPane>

@@ -7,10 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 public class ImageCropperController {
@@ -138,7 +136,6 @@ public class ImageCropperController {
                 (int) srcX, (int) srcY, (int) srcSize, (int) srcSize);
 
         // Convert to Base64
-        javafx.embed.swing.SwingFXUtils swingFXUtils = null;
         java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
         try {
             java.awt.image.BufferedImage buffered = new java.awt.image.BufferedImage(

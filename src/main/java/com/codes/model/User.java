@@ -1,8 +1,10 @@
+// 
 package com.codes.model;
 
 import java.time.LocalDateTime;
 
 public class User {
+
     private int id;
     private String userId;
     private String firstName;
@@ -12,9 +14,10 @@ public class User {
     private String profilePicture;
     private LocalDateTime createdAt;
 
-    // Constructors
+    // Default constructor
     public User() {}
 
+    // Constructor (signup)
     public User(String userId, String firstName, String lastName, String email, String password) {
         this.userId = userId;
         this.firstName = firstName;
@@ -23,7 +26,15 @@ public class User {
         this.password = password;
     }
 
-    // Getters and Setters (Right click in IntelliJ → Generate → Getter and Setter)
+    // 🔹 Constructor for login (VERY IMPORTANT)
+    public User(String firstName, String lastName, String email) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
+
+    /* ================= GETTERS ================= */
+
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -47,6 +58,8 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    /* ================= toString ================= */
 
     @Override
     public String toString() {
