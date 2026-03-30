@@ -1,6 +1,7 @@
 package com.codes.server;
 
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -8,8 +9,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * Allows pushing messages to connected users without them polling.
  */
 public class OnlineUserManager {
+    private static String normEmail(String email) {
+        if (email == null) return null;
+        return email.trim().toLowerCase();
+    }
     
-    private static final ConcurrentHashMap<String, PrintWriter> onlineUsers = 
+    public static final class OnlineUserSession {
+        private final PrintWriter out;
+        private final InetAddress address;
+        private volatile Integer audioPort;
+
+        OnlineUserSession(PrintWriter out, InetAddress address) {
+            this.out = out;
+            this.address = address;
+        }
+
+        public PrintWriter out() { return out; }
+        public InetAddress address() { return address; }
+        public Integer audioPort() { return audioPort; }
+        public void setAudioPort(Integer port) { this.audioPort = port; }
+    }
+
+    private static final ConcurrentHashMap<String, OnlineUserSession> onlineUsers =
             new ConcurrentHashMap<>();
     
     /**
@@ -17,9 +38,16 @@ public class OnlineUserManager {
      * @param email User's email
      * @param out PrintWriter for sending messages to the client
      */
-    public static void addUser(String email, PrintWriter out) {
-        onlineUsers.put(email, out);
+    public static void addUser(String email, PrintWriter out, InetAddress address) {
+        String key = normEmail(email);
+        if (key == null || key.isBlank()) return;
+        onlineUsers.put(key, new OnlineUserSession(out, address));
         System.out.println("User online: " + email + " (Total: " + onlineUsers.size() + ")");
+    }
+
+    public static void setAudioPort(String email, int port) {
+        OnlineUserSession s = onlineUsers.get(normEmail(email));
+        if (s != null) s.setAudioPort(port);
     }
     
     /**
@@ -27,7 +55,7 @@ public class OnlineUserManager {
      * @param email User's email
      */
     public static void removeUser(String email) {
-        onlineUsers.remove(email);
+        onlineUsers.remove(normEmail(email));
         System.out.println("User offline: " + email + " (Total: " + onlineUsers.size() + ")");
     }
     
@@ -37,7 +65,12 @@ public class OnlineUserManager {
      * @return PrintWriter if user is online, null otherwise
      */
     public static PrintWriter getUser(String email) {
-        return onlineUsers.get(email);
+        OnlineUserSession s = onlineUsers.get(normEmail(email));
+        return s == null ? null : s.out();
+    }
+
+    public static OnlineUserSession getSession(String email) {
+        return onlineUsers.get(normEmail(email));
     }
     
     /**
@@ -46,7 +79,7 @@ public class OnlineUserManager {
      * @return true if online, false otherwise
      */
     public static boolean isOnline(String email) {
-        return onlineUsers.containsKey(email);
+        return onlineUsers.containsKey(normEmail(email));
     }
     
     /**
@@ -78,9 +111,9 @@ public class OnlineUserManager {
      * @return true if message was sent, false if user is offline
      */
     public static boolean sendToUser(String email, String message) {
-        PrintWriter out = getUser(email);
-        if (out != null) {
-            out.println(message);
+        OnlineUserSession s = getSession(email);
+        if (s != null && s.out() != null) {
+            s.out().println(message);
             return true;
         }
         return false;

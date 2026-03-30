@@ -7,11 +7,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final AuthenticationService authService;
+    private String persistentEmail = null;
+    private static String normEmail(String email) {
+        if (email == null) return null;
+        return email.trim().toLowerCase();
+    }
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -30,7 +36,7 @@ public class ClientHandler implements Runnable {
                 line = line.trim();
                 System.out.println("Received from client: " + line);
 
-                String response = processCommand(line);
+                String response = processCommand(line, out);
                 if (response != null) {
                     for (String responseLine : response.split("\n")) {
                         out.println(responseLine);
@@ -42,6 +48,9 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Client disconnected");
         } finally {
+            if (persistentEmail != null) {
+                OnlineUserManager.removeUser(persistentEmail);
+            }
             try {
                 clientSocket.close();
             } catch (IOException e) {
@@ -50,7 +59,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String processCommand(String command) {
+    private String processCommand(String command, PrintWriter out) {
         String[] parts = command.split("\\|");
 
         try {
@@ -209,7 +218,68 @@ public class ClientHandler implements Runnable {
                 return result;
 
             } else if (parts[0].equalsIgnoreCase("KEEP_ALIVE")) {
+                if (parts.length < 2) return "KEEP_ALIVE_FAILED";
+                String email = normEmail(parts[1]);
+                InetAddress addr = clientSocket.getInetAddress();
+                OnlineUserManager.addUser(email, out, addr);
+                persistentEmail = email;
                 return "KEEP_ALIVE_SUCCESS";
+            } else if (parts[0].equalsIgnoreCase("AUDIO_PORT")) {
+                // AUDIO_PORT|email|port
+                if (parts.length < 3) return "AUDIO_PORT_FAILED";
+                String email = normEmail(parts[1]);
+                int port = Integer.parseInt(parts[2]);
+                OnlineUserManager.setAudioPort(email, port);
+                return "AUDIO_PORT_OK";
+            } else if (parts[0].equalsIgnoreCase("CALL_INVITE")) {
+                // CALL_INVITE|from|to|callId
+                if (parts.length < 4) return "CALL_INVITE_FAILED";
+                String from = normEmail(parts[1]);
+                String to = normEmail(parts[2]);
+                String callId = parts[3];
+
+                CallSessionManager.create(callId, from, to);
+                boolean ok = OnlineUserManager.sendToUser(to, "CALL_INVITE|" + callId + "|" + from);
+                return ok ? "CALL_INVITE_OK" : "CALL_INVITE_OFFLINE";
+            } else if (parts[0].equalsIgnoreCase("CALL_ACCEPT")) {
+                // CALL_ACCEPT|callId|from|to
+                if (parts.length < 4) return "CALL_ACCEPT_FAILED";
+                String callId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+
+                CallSessionManager.CallSession s = CallSessionManager.get(callId);
+                if (s == null) return "CALL_ACCEPT_UNKNOWN";
+
+                OnlineUserManager.OnlineUserSession fromS = OnlineUserManager.getSession(from);
+                OnlineUserManager.OnlineUserSession toS = OnlineUserManager.getSession(to);
+                if (fromS == null || toS == null) return "CALL_ACCEPT_OFFLINE";
+                if (fromS.audioPort() == null || toS.audioPort() == null) return "CALL_ACCEPT_NO_AUDIO_PORT";
+
+                // Notify both ends with the other party endpoint (LAN/WAN IP seen by server)
+                OnlineUserManager.sendToUser(from, "CALL_ESTABLISHED|" + callId + "|" + toS.address().getHostAddress() + "|" + toS.audioPort());
+                OnlineUserManager.sendToUser(to, "CALL_ESTABLISHED|" + callId + "|" + fromS.address().getHostAddress() + "|" + fromS.audioPort());
+                return "CALL_ACCEPT_OK";
+            } else if (parts[0].equalsIgnoreCase("CALL_REJECT")) {
+                // CALL_REJECT|callId|from|to|reason...
+                if (parts.length < 4) return "CALL_REJECT_FAILED";
+                String callId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+                String reason = parts.length >= 5 ? command.split("\\|", 5)[4] : "REJECTED";
+
+                OnlineUserManager.sendToUser(to, "CALL_REJECTED|" + callId + "|" + from + "|" + reason);
+                CallSessionManager.remove(callId);
+                return "CALL_REJECT_OK";
+            } else if (parts[0].equalsIgnoreCase("CALL_HANGUP")) {
+                // CALL_HANGUP|callId|from|to
+                if (parts.length < 4) return "CALL_HANGUP_FAILED";
+                String callId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+                OnlineUserManager.sendToUser(to, "CALL_ENDED|" + callId + "|" + from);
+                CallSessionManager.remove(callId);
+                return "CALL_HANGUP_OK";
             }
 
         } catch (Exception e) {

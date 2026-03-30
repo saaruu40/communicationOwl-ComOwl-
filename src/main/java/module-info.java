@@ -5,6 +5,7 @@ module com.example {
     requires transitive javafx.graphics;
     requires transitive javafx.swing;
 
+    requires java.desktop;
     requires transitive java.sql;
     requires org.xerial.sqlitejdbc;
 

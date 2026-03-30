@@ -7,8 +7,19 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class TestClient {
-    public static void main(String[] args) throws IOException {
+    private static String host = "localhost";
 
+    public static void main(String[] args) throws IOException {
+        System.out.print("Enter Server IP (leave empty for localhost): ");
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+        String input = scanner.nextLine().trim();
+        if (!input.isEmpty()) {
+            host = input;
+        }
+
+        System.out.println("\n--- Starting TestClient ---");
+        System.out.println("Target Server IP: " + host);
+        System.out.println("---------------------------\n");
         System.out.println("1. SIGNUP:");
         System.out.println(send("SIGNUP|John|Doe|john@gmail.com|Pass123|Pass123|Pet?|Tom|"));
         System.out.println(send("SIGNUP|Jane|Doe|jane@gmail.com|Pass123|Pass123|Pet?|Cat|"));
@@ -39,14 +50,30 @@ public class TestClient {
     }
 
     private static String send(String command) {
-        try (Socket socket = new Socket("localhost", 4444);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(
-                     new InputStreamReader(socket.getInputStream()))) {
+        try (Socket socket = createSocket();
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()))) {
+
             out.println(command);
-            return in.readLine();
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                if ("END_OF_RESPONSE".equals(line))
+                    break;
+                if (response.length() > 0)
+                    response.append("\n");
+                response.append(line);
+            }
+            return response.toString();
+
         } catch (IOException e) {
+            System.err.println("Failed connecting to " + host + ": " + e.getMessage());
             return "CONNECTION_ERROR";
         }
+    }
+
+    private static Socket createSocket() throws IOException {
+        return new Socket(host, 4444);
     }
 }

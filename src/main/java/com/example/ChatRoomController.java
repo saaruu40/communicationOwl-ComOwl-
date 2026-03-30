@@ -20,12 +20,14 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class ChatRoomController {
 
@@ -136,6 +138,21 @@ public class ChatRoomController {
     private Thread           messageUpdateThread;
     private volatile boolean isRunning = true;
 
+    // ── Audio Call (1:1) ──────────────────────────────────────────────────────
+    private final AudioCallService audioCallService = new AudioCallService();
+    private volatile String activeCallId = null;
+    private volatile boolean callActive = false;
+    private volatile int localAudioPort = -1;
+    private Consumer<String> signalingListener;
+    private volatile boolean audioCallingInitialized = false;
+    private volatile boolean callUiMonitorRunning = false;
+    private volatile Label callStatusLabel;
+
+    private static String normEmail(String email) {
+        if (email == null) return null;
+        return email.trim().toLowerCase();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
@@ -147,7 +164,114 @@ public class ChatRoomController {
         loadAllUsers();
         loadGroupList();
         initializeEmojiPicker();
+        initializeAudioCalling();
         startMessageUpdateThread();
+    }
+
+    private void initializeAudioCalling() {
+        if (audioCallingInitialized) return;
+        if (currentUserEmail == null) return;
+
+        signalingListener = this::onSignalingEvent;
+        SocketClient.addPersistentListener(signalingListener);
+        audioCallingInitialized = true;
+
+        // Bind a UDP port early (no mic/speaker opened yet) so CALL_ACCEPT can succeed.
+        new Thread(() -> {
+            try {
+                localAudioPort = audioCallService.bindPort();
+                if (SocketClient.isConnected()) {
+                    SocketClient.sendPersistent("AUDIO_PORT|" + normEmail(currentUserEmail) + "|" + localAudioPort);
+                }
+            } catch (Exception e) {
+                localAudioPort = -1;
+            }
+        }, "audio-bind").start();
+    }
+
+    /**
+     * Ensures the UDP port is bound and registered with the server.
+     * If not yet ready, binds synchronously (blocking the caller).
+     * Does NOT open mic/speakers — that happens only in connectToPeer().
+     * Returns true if the port is ready, false on failure.
+     */
+    private boolean ensureAudioPortReady() {
+        if (audioCallService.isPortBound() && localAudioPort > 0) return true;
+        try {
+            localAudioPort = audioCallService.bindPort();
+            if (SocketClient.isConnected()) {
+                SocketClient.sendPersistent("AUDIO_PORT|" + normEmail(currentUserEmail) + "|" + localAudioPort);
+            }
+            return localAudioPort > 0;
+        } catch (Exception e) {
+            localAudioPort = -1;
+            return false;
+        }
+    }
+
+    private void onSignalingEvent(String line) {
+        if (line == null || line.isBlank()) return;
+        if (!line.startsWith("CALL_")) return;
+
+        String[] parts = line.split("\\|");
+        switch (parts[0]) {
+            case "CALL_INVITE_OK" -> {
+                // Server confirmed invite was delivered — nothing to do, wait for CALL_ESTABLISHED.
+            }
+            case "CALL_INVITE_OFFLINE" -> {
+                Platform.runLater(() -> {
+                    endActiveCallIfMatches(activeCallId);
+                    hideCallOverlay();
+                    showAlert("User is offline (or audio not registered yet).");
+                });
+            }
+            case "CALL_INVITE" -> {
+                // CALL_INVITE|callId|from
+                if (parts.length < 3) return;
+                String callId = parts[1];
+                String from = parts[2];
+                if (currentUserEmail == null) return;
+                if (Objects.equals(normEmail(from), normEmail(currentUserEmail))) return;
+
+                Platform.runLater(() -> showIncomingCallOverlay(callId, from));
+            }
+            case "CALL_ESTABLISHED" -> {
+                // CALL_ESTABLISHED|callId|peerIp|peerPort
+                if (parts.length < 4) return;
+                String callId = parts[1];
+                String peerIp = parts[2];
+                int peerPort;
+                try { peerPort = Integer.parseInt(parts[3]); } catch (Exception e) { return; }
+
+                Platform.runLater(() -> startAudioWithPeer(callId, peerIp, peerPort));
+            }
+            case "CALL_REJECTED" -> {
+                // CALL_REJECTED|callId|from|reason
+                String callId = parts.length > 1 ? parts[1] : null;
+                String reason = parts.length > 3 ? parts[3] : "REJECTED";
+                Platform.runLater(() -> {
+                    endActiveCallIfMatches(callId);
+                    hideCallOverlay();
+                    showAlert("BUSY".equals(reason) ? "User is busy on another call." : "Call rejected.");
+                });
+            }
+            case "CALL_ACCEPT_NO_AUDIO_PORT" -> {
+                Platform.runLater(() -> {
+                    endActiveCallIfMatches(activeCallId);
+                    hideCallOverlay();
+                    showAlert("Audio not ready on one of the devices. Try again.");
+                });
+            }
+            case "CALL_ENDED" -> {
+                // CALL_ENDED|callId|from
+                String callId = parts.length > 1 ? parts[1] : null;
+                Platform.runLater(() -> {
+                    endActiveCallIfMatches(callId);
+                    hideCallOverlay();
+                    showAlert("Call ended.");
+                });
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -196,6 +320,11 @@ public class ChatRoomController {
         this.currentUserName  = firstName;
         if (userIdLabel != null) userIdLabel.setText(firstName);
         if (USERNAME    != null) USERNAME.setText(firstName);
+
+        // If controller ran initialize() before setCurrentUserInfo(), ensure calling is initialized now.
+        if (!audioCallingInitialized && currentUserEmail != null) {
+            initializeAudioCalling();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1539,13 +1668,312 @@ public class ChatRoomController {
     @FXML
     private void onAudioCallClick() {
         if (selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
-        showAlert("Audio call with " + selectedChatUserName);
+        if (currentUserEmail == null) { showAlert("Not logged in."); return; }
+        if (!SocketClient.isConnected()) { showAlert("Not connected to server."); return; }
+
+        if (callActive && activeCallId != null) {
+            // Hang up
+            String peer = normEmail(selectedChatUserEmail);
+            SocketClient.sendPersistent("CALL_HANGUP|" + activeCallId + "|" + normEmail(currentUserEmail) + "|" + peer);
+            endActiveCallIfMatches(activeCallId);
+            hideCallOverlay();
+            return;
+        }
+
+        // Ensure audio port is ready before initiating the call
+        showCallingOverlay(selectedChatUserEmail);
+        new Thread(() -> {
+            if (!ensureAudioPortReady()) {
+                Platform.runLater(() -> {
+                    hideCallOverlay();
+                    showAlert("Could not initialize audio (microphone/speaker). Check your audio devices.");
+                });
+                return;
+            }
+
+            String callId = currentUserEmail + "_" + System.currentTimeMillis();
+            Platform.runLater(() -> {
+                activeCallId = callId;
+                callActive = true;
+                showCallingOverlay(selectedChatUserEmail);
+            });
+            SocketClient.sendPersistent("CALL_INVITE|" + normEmail(currentUserEmail) + "|" + normEmail(selectedChatUserEmail) + "|" + callId);
+        }, "audio-call-init").start();
     }
 
     @FXML
     private void onVideoCallClick() {
         if (selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
         showAlert("Video call with " + selectedChatUserName);
+    }
+
+    private void showCallingOverlay(String to) {
+        if (callOverlay == null) return;
+        callOverlay.getChildren().clear();
+
+        // Phone icon
+        Label phoneIcon = new Label("📞");
+        phoneIcon.setFont(Font.font(32));
+
+        String displayName = selectedChatUserName != null ? selectedChatUserName : senderDisplayName(to);
+        Label l = new Label("Calling " + displayName + "…");
+        l.setTextFill(Color.WHITE);
+        l.setFont(Font.font("DM Sans", 18));
+        Label status = new Label("Ringing…");
+        status.setTextFill(Color.web("#d8dee9"));
+        status.setFont(Font.font("DM Sans", 13));
+        callStatusLabel = status;
+
+        Button hangup = new Button("✕  Hang up");
+        hangup.getStyleClass().add("call-btn");
+        hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
+        hangup.setOnAction(e -> onAudioCallClick());
+
+        VBox box = new VBox(14, phoneIcon, l, status, hangup);
+        box.setAlignment(Pos.CENTER);
+        callOverlay.getChildren().add(box);
+        callOverlay.setVisible(true);
+
+        if (activeCallId != null) startCallUiMonitor(activeCallId);
+    }
+
+    private void showIncomingCallOverlay(String callId, String from) {
+        if (callOverlay == null) return;
+        if (callActive) {
+            // Busy
+            SocketClient.sendPersistent("CALL_REJECT|" + callId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from) + "|BUSY");
+            return;
+        }
+
+        activeCallId = callId;
+        callActive = true;
+
+        callOverlay.getChildren().clear();
+
+        // Phone icon
+        Label phoneIcon = new Label("📞");
+        phoneIcon.setFont(Font.font(32));
+
+        String callerName = senderDisplayName(from);
+        Label l = new Label("Incoming call from " + callerName);
+        l.setTextFill(Color.WHITE);
+        l.setFont(Font.font("DM Sans", 18));
+        l.setWrapText(true);
+        Label fromLabel = new Label(from);
+        fromLabel.setTextFill(Color.web("#a0b9a5"));
+        fromLabel.setFont(Font.font("DM Sans", 12));
+        Label status = new Label("Incoming audio call…");
+        status.setTextFill(Color.web("#d8dee9"));
+        status.setFont(Font.font("DM Sans", 13));
+        callStatusLabel = status;
+
+        Button accept = new Button("✓  Accept");
+        accept.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
+        accept.setOnAction(e -> {
+            if (currentUserEmail == null) return;
+            showConnectingOverlay();
+            // Ensure audio port is ready before accepting
+            new Thread(() -> {
+                if (!ensureAudioPortReady()) {
+                    Platform.runLater(() -> {
+                        endActiveCallIfMatches(callId);
+                        hideCallOverlay();
+                        showAlert("Could not initialize audio devices.");
+                    });
+                    return;
+                }
+                SocketClient.sendPersistent("CALL_ACCEPT|" + callId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from));
+            }, "audio-accept-bind").start();
+        });
+
+        Button reject = new Button("✕  Reject");
+        reject.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
+        reject.setOnAction(e -> {
+            if (currentUserEmail == null) return;
+            SocketClient.sendPersistent("CALL_REJECT|" + callId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from) + "|REJECTED");
+            endActiveCallIfMatches(callId);
+            hideCallOverlay();
+        });
+
+        HBox buttons = new HBox(16, accept, reject);
+        buttons.setAlignment(Pos.CENTER);
+        VBox box = new VBox(14, phoneIcon, l, fromLabel, status, buttons);
+        box.setAlignment(Pos.CENTER);
+        callOverlay.getChildren().add(box);
+        callOverlay.setVisible(true);
+    }
+
+    private void showConnectingOverlay() {
+        if (callOverlay == null) return;
+        callOverlay.getChildren().clear();
+        Label phoneIcon = new Label("📞");
+        phoneIcon.setFont(Font.font(32));
+        Label l = new Label("Connecting…");
+        l.setTextFill(Color.WHITE);
+        l.setFont(Font.font("DM Sans", 18));
+        Label status = new Label("Setting up audio channel…");
+        status.setTextFill(Color.web("#d8dee9"));
+        status.setFont(Font.font("DM Sans", 13));
+        callStatusLabel = status;
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.setPrefSize(30, 30);
+        spinner.setMaxSize(30, 30);
+        VBox box = new VBox(14, phoneIcon, l, spinner, status);
+        box.setAlignment(Pos.CENTER);
+        callOverlay.getChildren().add(box);
+        callOverlay.setVisible(true);
+    }
+
+    private void startAudioWithPeer(String callId, String peerIp, int peerPort) {
+        if (activeCallId == null || !activeCallId.equals(callId)) return;
+        try {
+            audioCallService.connectToPeer(InetAddress.getByName(peerIp), peerPort);
+        } catch (Exception e) {
+            endActiveCallIfMatches(callId);
+            hideCallOverlay();
+            showAlert("Could not start audio.");
+            return;
+        }
+
+        // If no packets arrive after 5s, warn about firewall.
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                if (callActive && activeCallId != null && activeCallId.equals(callId)) {
+                    long last = audioCallService.lastReceivedAt();
+                    if (last == 0L) {
+                        Platform.runLater(() -> showAlert(
+                                "No incoming audio packets received. " +
+                                        "This usually means UDP is blocked by Windows Firewall. " +
+                                        "Allow UDP inbound/outbound for the Java app."
+                        ));
+                    }
+                }
+            } catch (InterruptedException ignored) {}
+        }, "audio-received-check").start();
+
+        if (callOverlay != null) {
+            callOverlay.getChildren().clear();
+
+            Label phoneIcon = new Label("📞");
+            phoneIcon.setFont(Font.font(32));
+
+            Label l = new Label("In Call");
+            l.setTextFill(Color.WHITE);
+            l.setFont(Font.font("DM Sans", 20));
+
+            Label durationLabel = new Label("00:00");
+            durationLabel.setTextFill(Color.web("#2ecc71"));
+            durationLabel.setFont(Font.font("DM Sans", 16));
+
+            Label status = new Label("Waiting for voice…");
+            status.setTextFill(Color.web("#d8dee9"));
+            status.setFont(Font.font("DM Sans", 12));
+            callStatusLabel = status;
+
+            // Mute button
+            Button muteBtn = new Button("🎤  Mute");
+            muteBtn.setStyle("-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-size: 13; -fx-cursor: hand;");
+            muteBtn.setOnAction(e -> {
+                boolean nowMuted = !audioCallService.isMuted();
+                audioCallService.setMuted(nowMuted);
+                muteBtn.setText(nowMuted ? "🔇  Unmute" : "🎤  Mute");
+                muteBtn.setStyle(nowMuted
+                    ? "-fx-background-color: #e67e22; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-size: 13; -fx-cursor: hand;"
+                    : "-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-size: 13; -fx-cursor: hand;");
+            });
+
+            // Hang up button
+            Button hangup = new Button("✕  Hang up");
+            hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
+            hangup.setOnAction(e -> onAudioCallClick());
+
+            HBox controls = new HBox(16, muteBtn, hangup);
+            controls.setAlignment(Pos.CENTER);
+
+            VBox box = new VBox(12, phoneIcon, l, durationLabel, status, controls);
+            box.setAlignment(Pos.CENTER);
+            callOverlay.getChildren().add(box);
+            callOverlay.setVisible(true);
+
+            // Start the UI monitor that updates duration + status text
+            startCallUiMonitor(callId, durationLabel);
+        }
+    }
+
+    private void hideCallOverlay() {
+        if (callOverlay != null) {
+            callOverlay.getChildren().clear();
+            callOverlay.setVisible(false);
+        }
+    }
+
+    private void endActiveCallIfMatches(String callId) {
+        if (callId == null || activeCallId == null) return;
+        if (!activeCallId.equals(callId)) return;
+        callActive = false;
+        activeCallId = null;
+        callUiMonitorRunning = false;
+        audioCallService.stop();
+
+        // Re-bind UDP port only (no mic/speaker) for next call
+        if (currentUserEmail != null) {
+            new Thread(() -> {
+                try {
+                    localAudioPort = audioCallService.bindPort();
+                    if (SocketClient.isConnected()) {
+                        SocketClient.sendPersistent("AUDIO_PORT|" + normEmail(currentUserEmail) + "|" + localAudioPort);
+                    }
+                } catch (Exception ignored) {
+                    localAudioPort = -1;
+                }
+            }, "audio-rebind").start();
+        }
+    }
+
+    /** Old signature for compatibility (ringing overlay, no duration label). */
+    private void startCallUiMonitor(String callId) {
+        startCallUiMonitor(callId, null);
+    }
+
+    private void startCallUiMonitor(String callId, Label durationLabel) {
+        if (callUiMonitorRunning) return;
+        callUiMonitorRunning = true;
+        new Thread(() -> {
+            while (callUiMonitorRunning && callActive && activeCallId != null && activeCallId.equals(callId)) {
+                long duration = audioCallService.callDurationSeconds();
+                long last = audioCallService.lastReceivedAt();
+
+                // Format duration as mm:ss
+                String durStr = String.format("%02d:%02d", duration / 60, duration % 60);
+
+                String statusMsg;
+                if (last == 0L) {
+                    statusMsg = "Connecting audio…";
+                } else {
+                    long agoMs = Math.max(0L, System.currentTimeMillis() - last);
+                    if (agoMs > 3000) {
+                        statusMsg = "Audio interrupted (" + (agoMs / 1000) + "s ago)";
+                    } else {
+                        statusMsg = "Audio active";
+                    }
+                }
+
+                Label label = callStatusLabel;
+                Label durLabel = durationLabel;
+                Platform.runLater(() -> {
+                    if (callStatusLabel == label && callUiMonitorRunning && callActive) {
+                        callStatusLabel.setText(statusMsg);
+                    }
+                    if (durLabel != null && callUiMonitorRunning && callActive) {
+                        durLabel.setText(durStr);
+                    }
+                });
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+            }
+        }, "call-ui-monitor").start();
     }
 
     @FXML
