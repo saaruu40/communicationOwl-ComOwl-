@@ -197,6 +197,17 @@
     -fx-scale-x: 1.05;
     -fx-scale-y: 1.05;
 }
+.call-btn:disabled {
+    -fx-background-color: #5f5a6d;
+    -fx-text-fill: #b9b6c4;
+    -fx-opacity: 0.8;
+    -fx-cursor: default;
+}
+.call-icon-btn {
+    -fx-font-family: "Segoe UI Symbol", "Segoe UI Emoji", "Noto Emoji", "Arial Unicode MS", "DM Sans";
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
 
 .info-btn {
     -fx-background-color: #f3f4d2; background-color: #f3f4d2;

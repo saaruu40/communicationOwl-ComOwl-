@@ -31,8 +31,11 @@ public class CallSessionManager {
     }
 
     private static final ConcurrentHashMap<String, CallSession> calls = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, String> userToCall = new ConcurrentHashMap<>();
 
     public static CallSession create(String callId, String from, String to) {
+        userToCall.put(from, callId);
+        userToCall.put(to, callId);
         CallSession s = new CallSession(callId, from, to);
         calls.put(callId, s);
         return s;
@@ -43,7 +46,21 @@ public class CallSessionManager {
     }
 
     public static void remove(String callId) {
-        calls.remove(callId);
+        CallSession s = calls.remove(callId);
+        if (s != null) {
+            userToCall.remove(s.a(), callId);
+            userToCall.remove(s.b(), callId);
+        }
+    }
+
+    public static boolean isInCall(String email) {
+        return email != null && userToCall.containsKey(email);
+    }
+
+    public static CallSession getByUser(String email) {
+        if (email == null) return null;
+        String callId = userToCall.get(email);
+        return callId == null ? null : calls.get(callId);
     }
 }
 

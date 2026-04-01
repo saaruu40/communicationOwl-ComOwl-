@@ -475,12 +475,16 @@ public class AuthenticationService {
             StringBuilder sb = new StringBuilder();
             while (rs.next()) {
                 if (sb.length() > 0) sb.append("\n");
+                String content = rs.getString("content");
+                String type = (content != null && content.startsWith(com.codes.util.FileMessageCodec.PREFIX))
+                        ? "file" : "text";
                 sb.append(rs.getString("senderEmail"))
                   .append("|")
-                  .append(rs.getString("content"))
+                  .append(content)
                   .append("|")
                   .append(rs.getString("timestamp"))
-                  .append("|text");
+                  .append("|")
+                  .append(type);
             }
             return sb.length() > 0 ? sb.toString() : "EMPTY";
 
@@ -517,12 +521,16 @@ public class AuthenticationService {
             StringBuilder sb = new StringBuilder();
             while (rs.next()) {
                 if (sb.length() > 0) sb.append("\n");
+                String content = rs.getString("content");
+                String type = (content != null && content.startsWith(com.codes.util.FileMessageCodec.PREFIX))
+                        ? "file" : "text";
                 sb.append(rs.getString("senderEmail"))
                   .append("|")
-                  .append(rs.getString("content"))
+                  .append(content)
                   .append("|")
                   .append(rs.getString("timestamp"))
-                  .append("|text");
+                  .append("|")
+                  .append(type);
             }
             return sb.length() > 0 ? sb.toString() : "EMPTY";
 

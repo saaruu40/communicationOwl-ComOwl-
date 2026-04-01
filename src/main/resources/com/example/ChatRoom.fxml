@@ -333,7 +333,8 @@
                                             </clip>
                                         </ImageView>
                                         <Label fx:id="clientIdLabel"
-                                               prefWidth="250.0"
+                                               maxWidth="1.7976931348623157E308"
+                                               HBox.hgrow="ALWAYS"
                                                text="Select a chat"
                                                textFill="#f3f4d2">
                                             <font><Font name="DM Sans" size="16.0" /></font>
@@ -343,7 +344,8 @@
                                                    prefWidth="150.0"
                                                    promptText="Search messages..."
                                                    styleClass="text-fields"
-                                                   visible="false" />
+                                                   visible="false"
+                                                   managed="false" />
 
                                         <Pane HBox.hgrow="ALWAYS" />
 
@@ -360,9 +362,9 @@
                                             <Button fx:id="audiocall"
                                                     mnemonicParsing="false"
                                                     onAction="#onAudioCallClick"
-                                                    styleClass="call-btn"
+                                                    styleClass="call-btn call-icon-btn"
                                                     prefHeight="40.0" prefWidth="40.0"
-                                                    text="📞">
+                                                    text="☎">
                                                 <font><Font size="16.0" /></font>
                                             </Button>
                                             <Button fx:id="videocall"
@@ -399,6 +401,14 @@
                                         prefHeight="40.0" prefWidth="40.0"
                                         styleClass="sending-btn" text="+">
                                     <font><Font name="DM Sans" size="20.0" /></font>
+                                    <cursor><Cursor fx:constant="HAND" /></cursor>
+                                </Button>
+                                <Button fx:id="sendFile"
+                                        mnemonicParsing="false"
+                                        onAction="#onSendFileClick"
+                                        prefHeight="40.0" prefWidth="40.0"
+                                        styleClass="sending-btn" text="📎">
+                                    <font><Font name="DM Sans" size="16.0" /></font>
                                     <cursor><Cursor fx:constant="HAND" /></cursor>
                                 </Button>
 

@@ -18,6 +18,7 @@ public class OnlineUserManager {
         private final PrintWriter out;
         private final InetAddress address;
         private volatile Integer audioPort;
+        private volatile Integer videoPort;
 
         OnlineUserSession(PrintWriter out, InetAddress address) {
             this.out = out;
@@ -28,6 +29,8 @@ public class OnlineUserManager {
         public InetAddress address() { return address; }
         public Integer audioPort() { return audioPort; }
         public void setAudioPort(Integer port) { this.audioPort = port; }
+        public Integer videoPort() { return videoPort; }
+        public void setVideoPort(Integer port) { this.videoPort = port; }
     }
 
     private static final ConcurrentHashMap<String, OnlineUserSession> onlineUsers =
@@ -48,6 +51,11 @@ public class OnlineUserManager {
     public static void setAudioPort(String email, int port) {
         OnlineUserSession s = onlineUsers.get(normEmail(email));
         if (s != null) s.setAudioPort(port);
+    }
+
+    public static void setVideoPort(String email, int port) {
+        OnlineUserSession s = onlineUsers.get(normEmail(email));
+        if (s != null) s.setVideoPort(port);
     }
     
     /**

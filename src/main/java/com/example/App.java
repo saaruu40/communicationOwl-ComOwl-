@@ -1,5 +1,6 @@
 package com.example;
 
+import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -9,6 +10,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.Optional;
+import javafx.util.Duration;
 import com.example.SocketClient;
 
 public class App extends Application {
@@ -20,7 +22,7 @@ public class App extends Application {
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
 
-        // Show a dialog to get the server IP before loading the main UI
+        // Show a dialog to get the server IP before loading the intro animation.
         TextInputDialog dialog = new TextInputDialog("localhost");
         dialog.setTitle("Server Connection");
         dialog.setHeaderText("Enter Server IP Address");
@@ -38,8 +40,18 @@ public class App extends Application {
             return;
         }
 
-        scene = new Scene(loadFXML("SignUp"), 1200, 800);
+        // Load intro animation after IP is entered.
+        Parent root = FXMLLoader.load(getClass().getResource("/com/example/Intro.fxml"));
+        scene = new Scene(root, 1200, 800);
+
+        // Fade in intro scene
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), root);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+        fadeIn.play();
+
         stage.setScene(scene);
+        stage.setTitle("ComOwl");
         stage.show();
     }
 

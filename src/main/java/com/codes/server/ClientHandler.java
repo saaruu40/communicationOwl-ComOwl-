@@ -200,11 +200,15 @@ public class ClientHandler implements Runnable {
                 return result;
 
             } else if (parts[0].equalsIgnoreCase("SEND_MESSAGE")) {
-                boolean success = authService.sendMessage(parts[1], parts[2], parts[3]);
+                String[] p = command.split("\\|", 4);
+                if (p.length < 4) return "MESSAGE_FAILED";
+                boolean success = authService.sendMessage(p[1], p[2], p[3]);
                 return success ? "MESSAGE_SENT" : "MESSAGE_FAILED";
 
             } else if (parts[0].equalsIgnoreCase("SEND_GROUP_MESSAGE")) {
-                boolean success = authService.sendGroupMessage(parts[1], parts[2], parts[3]);
+                String[] p = command.split("\\|", 4);
+                if (p.length < 4) return "MESSAGE_FAILED";
+                boolean success = authService.sendGroupMessage(p[1], p[2], p[3]);
                 return success ? "MESSAGE_SENT" : "MESSAGE_FAILED";
 
             } else if (parts[0].equalsIgnoreCase("GET_GROUP_MESSAGES")) {
@@ -231,6 +235,13 @@ public class ClientHandler implements Runnable {
                 int port = Integer.parseInt(parts[2]);
                 OnlineUserManager.setAudioPort(email, port);
                 return "AUDIO_PORT_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_PORT")) {
+                // VIDEO_PORT|email|port
+                if (parts.length < 3) return "VIDEO_PORT_FAILED";
+                String email = normEmail(parts[1]);
+                int port = Integer.parseInt(parts[2]);
+                OnlineUserManager.setVideoPort(email, port);
+                return "VIDEO_PORT_OK";
             } else if (parts[0].equalsIgnoreCase("CALL_INVITE")) {
                 // CALL_INVITE|from|to|callId
                 if (parts.length < 4) return "CALL_INVITE_FAILED";
@@ -238,9 +249,16 @@ public class ClientHandler implements Runnable {
                 String to = normEmail(parts[2]);
                 String callId = parts[3];
 
+                if (CallSessionManager.isInCall(from) || CallSessionManager.isInCall(to)) {
+                    return "CALL_INVITE_BUSY";
+                }
                 CallSessionManager.create(callId, from, to);
                 boolean ok = OnlineUserManager.sendToUser(to, "CALL_INVITE|" + callId + "|" + from);
-                return ok ? "CALL_INVITE_OK" : "CALL_INVITE_OFFLINE";
+                if (!ok) {
+                    CallSessionManager.remove(callId);
+                    return "CALL_INVITE_OFFLINE";
+                }
+                return "CALL_INVITE_OK";
             } else if (parts[0].equalsIgnoreCase("CALL_ACCEPT")) {
                 // CALL_ACCEPT|callId|from|to
                 if (parts.length < 4) return "CALL_ACCEPT_FAILED";
@@ -253,8 +271,16 @@ public class ClientHandler implements Runnable {
 
                 OnlineUserManager.OnlineUserSession fromS = OnlineUserManager.getSession(from);
                 OnlineUserManager.OnlineUserSession toS = OnlineUserManager.getSession(to);
-                if (fromS == null || toS == null) return "CALL_ACCEPT_OFFLINE";
-                if (fromS.audioPort() == null || toS.audioPort() == null) return "CALL_ACCEPT_NO_AUDIO_PORT";
+                if (fromS == null || toS == null) {
+                    CallSessionManager.remove(callId);
+                    return "CALL_ACCEPT_OFFLINE";
+                }
+                if (fromS.audioPort() == null || toS.audioPort() == null) {
+                    OnlineUserManager.sendToUser(to, "CALL_ACCEPT_NO_AUDIO_PORT|" + callId);
+                    OnlineUserManager.sendToUser(from, "CALL_ACCEPT_NO_AUDIO_PORT|" + callId);
+                    CallSessionManager.remove(callId);
+                    return "CALL_ACCEPT_NO_AUDIO_PORT";
+                }
 
                 // Notify both ends with the other party endpoint (LAN/WAN IP seen by server)
                 OnlineUserManager.sendToUser(from, "CALL_ESTABLISHED|" + callId + "|" + toS.address().getHostAddress() + "|" + toS.audioPort());
@@ -280,6 +306,69 @@ public class ClientHandler implements Runnable {
                 OnlineUserManager.sendToUser(to, "CALL_ENDED|" + callId + "|" + from);
                 CallSessionManager.remove(callId);
                 return "CALL_HANGUP_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_INVITE")) {
+                // VIDEO_INVITE|from|to|videoId
+                if (parts.length < 4) return "VIDEO_INVITE_FAILED";
+                String from = normEmail(parts[1]);
+                String to = normEmail(parts[2]);
+                String videoId = parts[3];
+
+                if (VideoSessionManager.isInVideo(from) || VideoSessionManager.isInVideo(to)) {
+                    return "VIDEO_INVITE_BUSY";
+                }
+                VideoSessionManager.create(videoId, from, to);
+                boolean ok = OnlineUserManager.sendToUser(to, "VIDEO_INVITE|" + videoId + "|" + from);
+                if (!ok) {
+                    VideoSessionManager.remove(videoId);
+                    return "VIDEO_INVITE_OFFLINE";
+                }
+                return "VIDEO_INVITE_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_ACCEPT")) {
+                // VIDEO_ACCEPT|videoId|from|to
+                if (parts.length < 4) return "VIDEO_ACCEPT_FAILED";
+                String videoId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+
+                VideoSessionManager.VideoSession s = VideoSessionManager.get(videoId);
+                if (s == null) return "VIDEO_ACCEPT_UNKNOWN";
+
+                OnlineUserManager.OnlineUserSession fromS = OnlineUserManager.getSession(from);
+                OnlineUserManager.OnlineUserSession toS = OnlineUserManager.getSession(to);
+                if (fromS == null || toS == null) {
+                    VideoSessionManager.remove(videoId);
+                    return "VIDEO_ACCEPT_OFFLINE";
+                }
+                if (fromS.videoPort() == null || toS.videoPort() == null) {
+                    OnlineUserManager.sendToUser(to, "VIDEO_ACCEPT_NO_VIDEO_PORT|" + videoId);
+                    OnlineUserManager.sendToUser(from, "VIDEO_ACCEPT_NO_VIDEO_PORT|" + videoId);
+                    VideoSessionManager.remove(videoId);
+                    return "VIDEO_ACCEPT_NO_VIDEO_PORT";
+                }
+
+                OnlineUserManager.sendToUser(from, "VIDEO_ESTABLISHED|" + videoId + "|" + toS.address().getHostAddress() + "|" + toS.videoPort());
+                OnlineUserManager.sendToUser(to, "VIDEO_ESTABLISHED|" + videoId + "|" + fromS.address().getHostAddress() + "|" + fromS.videoPort());
+                return "VIDEO_ACCEPT_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_REJECT")) {
+                // VIDEO_REJECT|videoId|from|to|reason
+                if (parts.length < 4) return "VIDEO_REJECT_FAILED";
+                String videoId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+                String reason = parts.length >= 5 ? command.split("\\|", 5)[4] : "REJECTED";
+
+                OnlineUserManager.sendToUser(to, "VIDEO_REJECTED|" + videoId + "|" + from + "|" + reason);
+                VideoSessionManager.remove(videoId);
+                return "VIDEO_REJECT_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_HANGUP")) {
+                // VIDEO_HANGUP|videoId|from|to
+                if (parts.length < 4) return "VIDEO_HANGUP_FAILED";
+                String videoId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+                OnlineUserManager.sendToUser(to, "VIDEO_ENDED|" + videoId + "|" + from);
+                VideoSessionManager.remove(videoId);
+                return "VIDEO_HANGUP_OK";
             }
 
         } catch (Exception e) {
