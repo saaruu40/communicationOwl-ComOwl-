@@ -141,16 +141,19 @@ public class SocketClient {
             try {
                 String line;
                 while (persistentIn != null && (line = persistentIn.readLine()) != null) {
+                    System.out.println("[persistent] got: " + line);
                     if ("END_OF_RESPONSE".equals(line))
                         continue;
                     for (Consumer<String> c : persistentListeners) {
                         try {
                             c.accept(line);
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            System.err.println("Error in persistent listener: " + e.getMessage());
                         }
                     }
                 }
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                System.err.println("Persistent listener terminated: " + e.getMessage());
             }
         }, "persistent-socket-listener");
         persistentListenerThread.setDaemon(true);

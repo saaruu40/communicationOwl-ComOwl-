@@ -9,6 +9,7 @@ module com.example {
     requires transitive java.sql;
     requires org.xerial.sqlitejdbc;
     requires webcam.capture;
+    requires javafx.media;
 
     opens com.example to javafx.fxml;
     exports com.example;

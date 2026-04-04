@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.ChangeNameController"
+            prefWidth="280.0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 4);">
+
+    <VBox AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+          spacing="15.0">
+
+        <!-- Back -->
+        <HBox alignment="CENTER_LEFT">
+            <padding><Insets top="8" left="10" /></padding>
+            <Label text="←" onMouseClicked="#goBack"
+                   style="-fx-text-fill: #555; -fx-cursor: hand; -fx-font-size: 16px;" />
+        </HBox>
+
+        <VBox spacing="15.0">
+            <padding><Insets left="20" right="20" bottom="20" /></padding>
+
+            <!-- First Name -->
+            <Label text="Firstname:"
+                   style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a;" />
+            <TextField fx:id="firstNameField"
+                       prefHeight="38.0"
+                       style="-fx-background-color: transparent; -fx-border-color: #ccc; -fx-border-radius: 8; -fx-background-radius: 8; -fx-font-size: 13px; -fx-padding: 0 10 0 10;" />
+
+            <!-- Last Name -->
+            <Label text="Lastname:"
+                   style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a;" />
+            <TextField fx:id="lastNameField"
+                       prefHeight="38.0"
+                       style="-fx-background-color: transparent; -fx-border-color: #ccc; -fx-border-radius: 8; -fx-background-radius: 8; -fx-font-size: 13px; -fx-padding: 0 10 0 10;" />
+
+            <!-- Error -->
+            <Label fx:id="errorLabel" text="" textFill="red"
+                   visible="false"
+                   style="-fx-font-size: 12px;" />
+
+            <!-- Submit -->
+            <HBox alignment="CENTER">
+                <Button text="Submit" onMouseClicked="#submitName"
+                        prefWidth="120.0" prefHeight="38.0"
+                        style="-fx-background-color: #2a0168; -fx-text-fill: white; -fx-font-size: 14px; -fx-cursor: hand; -fx-background-radius: 8;" />
+            </HBox>
+
+        </VBox>
+    </VBox>
+</AnchorPane>

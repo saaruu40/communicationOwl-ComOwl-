@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.ChatController"
+            styleClass="chat-border-pane">
+
+    <!-- Chat Header -->
+    <top>
+        <VBox styleClass="chat-header">
+            <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="chat-header-content">
+                <padding><Insets left="20.0" right="20.0" top="12.0" bottom="12.0" /></padding>
+
+                <StackPane>
+                    <ImageView fx:id="chatUserImage" fitHeight="40.0" fitWidth="40.0"
+                               preserveRatio="false" />
+                    <Circle radius="20" fill="transparent" stroke="#7B2CFF" strokeWidth="2" />
+                </StackPane>
+
+                <VBox spacing="2.0">
+                    <Label fx:id="chatUserName" styleClass="chat-user-name" />
+                    <Label fx:id="chatUserStatus" styleClass="chat-user-status" text="Online" />
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <HBox spacing="15.0">
+                    <Label onMouseClicked="#onVideoCallClick" styleClass="call-icon" text="📹" />
+                    <Label onMouseClicked="#onAudioCallClick" styleClass="call-icon" text="📞" />
+                    <Label onMouseClicked="#onInfoClick" styleClass="info-icon" text="ℹ️" />
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- Chat Messages Area -->
+    <center>
+        <ScrollPane fx:id="messageScrollPane" fitToWidth="true" styleClass="message-scroll-pane">
+            <VBox fx:id="messageContainer" styleClass="message-container" spacing="8.0">
+                <padding><Insets top="15.0" right="15.0" bottom="15.0" left="15.0" /></padding>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <!-- Message Input Area -->
+    <bottom>
+        <VBox styleClass="message-input-area">
+            <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="input-container">
+                <padding><Insets left="15.0" right="15.0" top="12.0" bottom="12.0" /></padding>
+
+                <Label onMouseClicked="#onEmojiClick" styleClass="input-icon" text="😊" />
+                <Label onMouseClicked="#onAttachmentClick" styleClass="input-icon" text="📎" />
+
+                <TextField fx:id="messageField" promptText="Type a message..."
+                           onKeyPressed="#onEnterPressed" styleClass="message-input-field"
+                           HBox.hgrow="ALWAYS" />
+
+                <Label onMouseClicked="#onSendMessage" styleClass="send-button" text="Send" />
+            </HBox>
+        </VBox>
+    </bottom>
+
+</BorderPane>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.ProfileSettingsController"
+            prefWidth="280.0" prefHeight="380.0"
+            style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);">
+
+    <VBox spacing="0.0"
+          AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <!-- Close Button -->
+        <HBox alignment="CENTER_RIGHT">
+            <padding><Insets top="8" right="10" /></padding>
+            <Button text="✕" onMouseClicked="#closePopup"
+                    style="-fx-background-color: transparent; -fx-text-fill: #888; -fx-cursor: hand; -fx-font-size: 14px;" />
+        </HBox>
+
+        <!-- Profile Picture -->
+        <HBox alignment="CENTER">
+            <VBox.margin><Insets bottom="5" /></VBox.margin>
+            <ImageView fx:id="profileImageView"
+                       fitHeight="70.0" fitWidth="70.0"
+                       preserveRatio="false"
+                       style="-fx-cursor: hand;" />
+        </HBox>
+
+        <!-- Title -->
+        <Label text="Profile Settings" alignment="CENTER"
+               maxWidth="1.7976931348623157E308"
+               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;">
+            <VBox.margin><Insets bottom="10" /></VBox.margin>
+        </Label>
+
+        <Separator />
+
+        <!-- Menu Items -->
+        <VBox spacing="0.0">
+            <padding><Insets top="5" bottom="5" /></padding>
+
+            <!-- My Profile -->
+            <Label text="My profile" maxWidth="1.7976931348623157E308"
+                   onMouseClicked="#showMyProfile"
+                   style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-cursor: hand; -fx-padding: 10 20 10 20;">
+            </Label>
+
+            <!-- Update Account -->
+            <Label text="Update account" maxWidth="1.7976931348623157E308"
+                   onMouseClicked="#showUpdateAccount"
+                   style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-cursor: hand; -fx-padding: 10 20 10 20;">
+            </Label>
+
+            <Separator />
+
+            <!-- Friends -->
+            <Label text="Friends" maxWidth="1.7976931348623157E308"
+                   onMouseClicked="#showFriends"
+                   style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-cursor: hand; -fx-padding: 10 0 10 20;" />
+            <Separator />
+
+            <!-- Log Out -->
+            <Label text="Log out" maxWidth="1.7976931348623157E308"
+                   onMouseClicked="#logout"
+                   style="-fx-font-size: 14px; -fx-text-fill: #e74c3c; -fx-cursor: hand; -fx-padding: 10 20 10 20;">
+            </Label>
+
+            <Separator />
+
+            <!-- Notification Sound Toggle -->
+            <HBox alignment="CENTER_LEFT" spacing="10.0"
+                  style="-fx-padding: 10 20 10 20;">
+                <Label text="Notification sound"
+                       style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a;" />
+                <ToggleButton fx:id="notificationToggle"
+                              selected="true"
+                              onMouseClicked="#toggleNotification"
+                              style="-fx-background-color: #2ecc71; -fx-background-radius: 20; -fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand;"
+                              text="ON" />
+            </HBox>
+
+            <Separator />
+
+            <!-- Delete Account -->
+            <Label text="Delete account" maxWidth="1.7976931348623157E308"
+                   onMouseClicked="#deleteAccount"
+                   style="-fx-font-size: 14px; -fx-text-fill: #e74c3c; -fx-cursor: hand; -fx-padding: 10 20 10 20;">
+            </Label>
+
+        </VBox>
+    </VBox>
+</AnchorPane>

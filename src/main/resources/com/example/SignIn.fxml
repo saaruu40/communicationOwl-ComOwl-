@@ -49,7 +49,7 @@
             <!-- Sign In Button -->
             <!-- Sign In Button -->
             <HBox alignment="CENTER">
-                <Button fx:id="signInButton" onMouseClicked="#signInHandle"
+                <Button fx:id="signInButton" defaultButton="true" onAction="#signInHandle"
                         prefWidth="200.0" prefHeight="46.0"
                         style="-fx-background-color: linear-gradient(to bottom, #7B2CFF, #5D16CC); -fx-text-fill: white; -fx-font-size: 22px; -fx-font-family: 'Times New Roman'; -fx-border-color: #cdb7ff; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-cursor: hand;"
                         text="Sign In" />

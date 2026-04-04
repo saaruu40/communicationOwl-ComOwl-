@@ -12,197 +12,282 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.Rectangle?>
 
-<AnchorPane prefHeight="720.0" prefWidth="1280.0"
-            styleClass="anchor"
-            stylesheets="@chatStyle.css"
-            xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.ChatRoomController">
+<!--
+    Layout  :  1280 × 720
+    Top bar :  y=0,   h=56
+    Panels  :  y=56,  h=664
+    Left    :  x=0,   w=280
+    Center  :  x=280, w=720
+    Right   :  x=1000,w=280
+-->
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f0a1e;" styleClass="anchor" stylesheets="@chatStyle.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.ChatRoomController">
     <children>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- LEFT PANEL                                               -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <Pane fx:id="leftbase" prefHeight="720.0" prefWidth="319.0"
-              style="-fx-background-color: #2e1a47;">
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!--  TOP NAVIGATION BAR  (full 1280px × 56px)                 -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <HBox alignment="CENTER_LEFT" prefHeight="56.0" prefWidth="1280.0" spacing="0" style="-fx-background-color: #1c1436;                      -fx-border-color: rgba(123,44,255,0.25);                      -fx-border-width: 0 0 1 0;                      -fx-padding: 0 18 0 18;">
+
+            <!-- ── LEFT: App name ── -->
+            <HBox alignment="CENTER_LEFT" minWidth="280" prefWidth="280" spacing="10">
+                <!-- App name -->
+                <Label style="-fx-text-fill: #f0eaff;                               -fx-font-size: 18px;                               -fx-font-family: 'DM Sans';                               -fx-font-weight: bold;" text="ComOwl" />
+                <Label fx:id="userIdLabel" style="-fx-text-fill: rgba(155,136,204,0.55);                               -fx-font-size: 12px;                               -fx-font-family: 'DM Sans';" text="" />
+            </HBox>
+            <Region HBox.hgrow="ALWAYS" />
+
+            <!-- ── RIGHT: Friend requests + Notifications + Profile ── -->
+            <HBox alignment="CENTER_RIGHT" spacing="6">
+
+                <!-- Friend Requests icon -->
+                <StackPane>
+                    <Button fx:id="friendRequestsBtn" mnemonicParsing="false" onAction="#onFriendRequestsClick" prefHeight="38" prefWidth="38" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-text-fill: #c4b0ff; -fx-font-size: 16px;">
+                        <cursor><Cursor fx:constant="HAND" /></cursor>
+                    </Button>
+                    <!-- Icon drawn over button -->
+                    <Label mouseTransparent="true" style="-fx-font-size: 15px;" text="👥" />
+                    <!-- Badge -->
+                    <Label fx:id="friendRequestBadge" style="-fx-background-color: #ef4444;                                   -fx-text-fill: white;                                   -fx-font-size: 9px;                                   -fx-font-family: 'DM Sans';                                   -fx-font-weight: bold;                                   -fx-background-radius: 8;                                   -fx-padding: 1 4 1 4;                                   -fx-min-width: 16;                                   -fx-alignment: center;" text="0" translateX="6" translateY="-6" visible="false" StackPane.alignment="TOP_RIGHT" />
+                </StackPane>
+
+                <!-- Profile icon -->
+                <StackPane>
+                    <Button fx:id="profileMenuBtn" mnemonicParsing="false" onAction="#onProfileMenuClick" prefHeight="38" prefWidth="38" style="-fx-background-color: rgba(123,44,255,0.15);                                    -fx-background-radius: 19;                                    -fx-border-color: rgba(123,44,255,0.25);                                    -fx-border-radius: 19;                                    -fx-border-width: 1;                                    -fx-text-fill: #c4b0ff;                                    -fx-font-size: 16px;">
+                        <cursor><Cursor fx:constant="HAND" /></cursor>
+                    </Button>
+                </StackPane>
+
+            </HBox>
+        </HBox>
+
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!--  LEFT SIDEBAR  (x=0, y=56, 280×664)                       -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <Pane fx:id="leftbase" layoutY="56.0" prefHeight="664.0" prefWidth="280.0" style="-fx-background-color: #16102b;                      -fx-border-color: rgba(123,44,255,0.18);                      -fx-border-width: 0 1 0 0;">
             <children>
 
-                <!-- User Header -->
-                <HBox fx:id="userCard" alignment="CENTER_LEFT"
-                      prefHeight="70.0" prefWidth="319.0"
-                      spacing="15" styleClass="header-user">
-                    <padding><Insets left="15.0" /></padding>
-                    <ImageView fx:id="userImage" fitHeight="50" fitWidth="50">
-                        <clip>
-                            <Circle fx:id="userImageClip" centerX="25" centerY="25" radius="25" />
-                        </clip>
-                    </ImageView>
-                    <Label fx:id="userIdLabel" text="User" textFill="#f3f4d2">
-                        <font><Font name="DM Sans" size="16.0" /></font>
-                    </Label>
+                <!-- ── Search at top of conversation list ── -->
+                <HBox alignment="CENTER" layoutY="8" prefHeight="44" prefWidth="280" style="-fx-padding: 0 12 8 12;">
+                    <TextField fx:id="globalSearch" onKeyReleased="#onGlobalSearchTyped" prefHeight="36" prefWidth="256" promptText="🔍 Search people..." style="-fx-background-color: #231a3d; -fx-background-radius: 18; -fx-border-color: rgba(123,44,255,0.3); -fx-border-radius: 18; -fx-border-width: 1; -fx-text-fill: #f0eaff; -fx-prompt-text-fill: #6b5a8a; -fx-font-size: 12px; -fx-font-family: 'DM Sans'; -fx-padding: 0 14;" />
                 </HBox>
 
-                <!-- Search Field -->
-                <TextField fx:id="searchUsers"
-                           layoutY="70.0" prefHeight="40.0" prefWidth="319.0"
-                           promptText="Search..." styleClass="text-fields">
-                    <padding><Insets left="15.0" right="15.0" /></padding>
-                </TextField>
-
-                <!-- Tab Buttons -->
-                <HBox layoutY="110.0" prefHeight="40.0" prefWidth="319.0"
-                      style="-fx-background-color: #251340;">
-                    <Button fx:id="usersTabBtn"
-                            onAction="#onUsersTabClick"
-                            mnemonicParsing="false"
-                            prefHeight="40.0" prefWidth="159.5"
-                            text="Users">
-                        <font><Font name="DM Sans" size="13.0" /></font>
+                <!-- ── Tabs ── -->
+                <HBox layoutY="58" prefHeight="38" prefWidth="280" spacing="0" style="-fx-background-color: #1c1436;                              -fx-padding: 4 12 4 12;">
+                    <Button fx:id="usersTabBtn" mnemonicParsing="false" onAction="#onUsersTabClick" prefHeight="30" prefWidth="122" style="-fx-background-color: #7B2CFF;                                    -fx-background-radius: 15 0 0 15;                                    -fx-border-color: transparent;                                    -fx-text-fill: white;                                    -fx-font-size: 12px;                                    -fx-font-family: 'DM Sans';" text="💬  Chats">
                         <cursor><Cursor fx:constant="HAND" /></cursor>
                     </Button>
-                    <Button fx:id="groupsTabBtn"
-                            onAction="#onGroupsTabClick"
-                            mnemonicParsing="false"
-                            prefHeight="40.0" prefWidth="159.5"
-                            text="Groups">
-                        <font><Font name="DM Sans" size="13.0" /></font>
+                    <Button fx:id="groupsTabBtn" mnemonicParsing="false" onAction="#onGroupsTabClick" prefHeight="30" prefWidth="122" style="-fx-background-color: #2a1f47;                                    -fx-background-radius: 0 15 15 0;                                    -fx-border-color: rgba(123,44,255,0.4);                                    -fx-border-width: 1 1 1 0;                                    -fx-border-radius: 0 15 15 0;                                    -fx-text-fill: #9b88cc;                                    -fx-font-size: 12px;                                    -fx-font-family: 'DM Sans';" text="👥  Groups">
                         <cursor><Cursor fx:constant="HAND" /></cursor>
                     </Button>
                 </HBox>
 
-                <!-- Users / Groups List -->
-                <ScrollPane fx:id="leftpane"
-                            hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                            layoutY="150.0" prefHeight="570.0" prefWidth="319.0"
-                            styleClass="left-scroll">
+                <!-- ── Contact list ── -->
+                <ScrollPane fx:id="leftpane" fitToWidth="true" hbarPolicy="NEVER" layoutY="88" prefHeight="576" prefWidth="280" style="-fx-background-color: transparent;                                    -fx-background: transparent;                                    -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
                     <content>
-                        <VBox fx:id="friendslist" styleClass="friends-list" />
+                        <VBox fx:id="friendslist" prefWidth="280" style="-fx-background-color: transparent;" />
                     </content>
                 </ScrollPane>
+
+                <!-- Hidden fx:id kept for controller compatibility -->
+                <HBox fx:id="userCard" managed="false" prefHeight="0" prefWidth="0" visible="false" />
+                <ImageView fx:id="userImageSidebar" fitHeight="0" fitWidth="0" managed="false" visible="false">
+                    <clip><Circle fx:id="userImageClipSidebar" radius="0" /></clip>
+                </ImageView>
 
             </children>
         </Pane>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- RIGHT SIDEBAR                                            -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <StackPane layoutX="926.0" prefHeight="720.0" prefWidth="354.0">
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!--  CENTER CHAT AREA  (x=280, y=56, 720×664)                 -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <Pane layoutX="280.0" layoutY="56.0" prefHeight="664.0" prefWidth="720.0" style="-fx-background-color: #0f0a1e;">
+            <children>
+                <VBox fx:id="chatbody" prefHeight="664.0" prefWidth="720.0">
+
+                    <!-- ── Chat Header ── -->
+                    <HBox fx:id="clientCard" alignment="CENTER_LEFT" prefHeight="62.0" prefWidth="720.0" spacing="14" style="-fx-background-color: #16102b;                                  -fx-border-color: rgba(123,44,255,0.18);                                  -fx-border-width: 0 0 1 0;                                  -fx-padding: 0 16 0 20;">
+
+                        <StackPane prefHeight="44" prefWidth="44">
+                            <Circle centerX="22" centerY="22" fill="#251a45" radius="22" />
+                            <ImageView fx:id="clientImage" fitHeight="40" fitWidth="40">
+                                <clip>
+                                    <Circle fx:id="clientImageClip" centerX="20" centerY="20" radius="20" />
+                                </clip>
+                            </ImageView>
+                            <Circle centerX="35" centerY="35" fill="#22c55e" radius="6" stroke="#16102b" strokeWidth="2" StackPane.alignment="BOTTOM_RIGHT" />
+                        </StackPane>
+
+                        <VBox spacing="2" HBox.hgrow="ALWAYS">
+                            <Label fx:id="clientIdLabel" maxWidth="Infinity" style="-fx-text-fill: #f0eaff;                                           -fx-font-size: 15px;                                           -fx-font-family: 'DM Sans';                                           -fx-font-weight: bold;" text="Select a conversation" />
+                            <Label style="-fx-text-fill: #6b5a8a;                                           -fx-font-size: 11px;                                           -fx-font-family: 'DM Sans';" text="tap to view profile" />
+                        </VBox>
+
+                        <TextField fx:id="searchMessages" managed="false" prefWidth="180" promptText="Search in chat..." style="-fx-background-color: #231a3d;                                           -fx-background-radius: 16;                                           -fx-border-color: rgba(123,44,255,0.4);                                           -fx-border-radius: 16;                                           -fx-border-width: 1;                                           -fx-text-fill: #f0eaff;                                           -fx-prompt-text-fill: #6b5a8a;                                           -fx-font-size: 12px;                                           -fx-padding: 6 14 6 14;" visible="false" />
+
+                        <HBox fx:id="headerButtonsBox" alignment="CENTER_RIGHT" spacing="6">
+                            <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#onSearchButtonClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 14px;" text="🔍">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
+                            <Button fx:id="audiocall" mnemonicParsing="false" onAction="#onAudioCallClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 14px;" text="☎">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
+                            <Button fx:id="videocall" mnemonicParsing="false" onAction="#onVideoCallClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 14px;" text="📹">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
+                            <Button fx:id="infobtn" mnemonicParsing="false" onAction="#onInfoButtonClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-text-fill: #c4b0ff; -fx-border-width: 1; -fx-font-size: 14px; -fx-font-weight: bold;" text="⋯">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
+                        </HBox>
+                    </HBox>
+
+                    <!-- ── Message Area ── -->
+                    <Pane prefWidth="720.0" VBox.vgrow="ALWAYS">
+
+                        <ImageView fx:id="chatBG" fitHeight="602.0" fitWidth="720.0" opacity="0.07" pickOnBounds="true" preserveRatio="false">
+                            <image>
+                                <Image url="@../Images/hogwarts_background.jpg" />
+                            </image>
+                        </ImageView>
+
+                        <ScrollPane fx:id="chatScroll" fitToWidth="true" hbarPolicy="NEVER" prefHeight="602.0" prefWidth="720.0" style="-fx-background-color: transparent;                                            -fx-background: transparent;                                            -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
+                            <content>
+                                <VBox fx:id="msgbox" prefWidth="720.0" spacing="4">
+                                    <padding>
+                                        <Insets bottom="16" left="16" right="16" top="16" />
+                                    </padding>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+
+                        <VBox fx:id="groupProfilePane" managed="false" prefHeight="602.0" prefWidth="720.0" spacing="0" styleClass="group-profile-pane" visible="false" />
+
+                        <StackPane fx:id="chatStateOverlay" mouseTransparent="true" pickOnBounds="false" prefHeight="602.0" prefWidth="720.0">
+                            <children>
+                                <VBox fx:id="chatLoadingPane" alignment="CENTER" managed="false" maxHeight="Infinity" maxWidth="Infinity" spacing="14" style="-fx-background-color: rgba(15,10,30,0.85);" visible="false">
+                                    <ProgressIndicator fx:id="chatLoadingIndicator" prefHeight="42" prefWidth="42" />
+                                    <Label fx:id="chatLoadingLabel" style="-fx-text-fill: #9b88cc;                                                   -fx-font-size: 13px;                                                   -fx-font-family: 'DM Sans';" text="Loading messages..." />
+                                </VBox>
+                                <VBox fx:id="chatErrorPane" alignment="TOP_CENTER" managed="false" pickOnBounds="false" visible="false" StackPane.alignment="TOP_CENTER">
+                                    <padding><Insets left="14" right="14" top="14" /></padding>
+                                    <Label fx:id="chatErrorLabel" maxWidth="580" style="-fx-text-fill: #fca5a5;                                                   -fx-background-color: rgba(220,38,38,0.2);                                                   -fx-background-radius: 10;                                                   -fx-border-color: rgba(220,38,38,0.4);                                                   -fx-border-radius: 10;                                                   -fx-border-width: 1;                                                   -fx-padding: 10 16;                                                   -fx-font-size: 12px;                                                   -fx-font-family: 'DM Sans';" wrapText="true" />
+                                </VBox>
+                            </children>
+                        </StackPane>
+
+                        <StackPane fx:id="callOverlay" prefHeight="602.0" prefWidth="720.0" style="-fx-background-color: rgba(0,0,0,0.82);" visible="false" />
+                    </Pane>
+
+                    <!-- ── Input Bar ── -->
+                    <HBox alignment="CENTER" prefHeight="62.0" prefWidth="720.0" spacing="10" style="-fx-background-color: #16102b;                                  -fx-border-color: rgba(123,44,255,0.18);                                  -fx-border-width: 1 0 0 0;                                  -fx-padding: 11 16 11 16;">
+                        <Button fx:id="sendFile" mnemonicParsing="false" onAction="#onSendFileClick" prefHeight="38" prefWidth="38" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;" text="📎">
+                            <cursor><Cursor fx:constant="HAND" /></cursor>
+                        </Button>
+
+                        <TextField fx:id="msgField" prefHeight="40" promptText="Write a message..." style="-fx-background-color: #231a3d;                                           -fx-background-radius: 20;                                           -fx-border-color: rgba(123,44,255,0.35);                                           -fx-border-radius: 20;                                           -fx-border-width: 1;                                           -fx-text-fill: #f0eaff;                                           -fx-prompt-text-fill: #6b5a8a;                                           -fx-font-size: 14px;                                           -fx-font-family: 'DM Sans';                                           -fx-padding: 0 18 0 18;" HBox.hgrow="ALWAYS" />
+
+                        <Button fx:id="voiceToText" mnemonicParsing="false" onAction="#onVoiceToTextClick" prefHeight="38" prefWidth="38" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;" text="🎤">
+                            <cursor><Cursor fx:constant="HAND" /></cursor>
+                        </Button>
+                        <Button fx:id="sendEmoji" mnemonicParsing="false" onAction="#onEmojiButtonClick" prefHeight="38" prefWidth="38" style="-fx-background-color: rgba(123,44,255 linear-gradient(to bottom right, #9b30ff, #6d12e8),0.15); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;" text="😊">
+                            <cursor><Cursor fx:constant="HAND" /></cursor>
+                        </Button>
+                        <Button fx:id="sendMsg" mnemonicParsing="false" onAction="#onSendMessageClick" prefHeight="40" prefWidth="40" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8);                                        -fx-background-radius: 20;                                        -fx-border-color: transparent;                                        -fx-text-fill: white;                                        -fx-font-size: 16px;                                        -fx-effect: dropshadow(gaussian,rgba(123,44,255,0.55),10,0,0,2);" text="➤">
+                            <cursor><Cursor fx:constant="HAND" /></cursor>
+                        </Button>
+                    </HBox>
+
+                </VBox>
+            </children>
+        </Pane>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!--  RIGHT PANEL  (x=1000, y=56, 280×664)                     -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <StackPane layoutX="1000.0" layoutY="56.0" prefHeight="664.0" prefWidth="280.0">
             <children>
 
-                <!-- Background GIF -->
-                <ImageView fitHeight="720.0" fitWidth="354.0"
-                           pickOnBounds="true" preserveRatio="false">
+                <ImageView fitHeight="664.0" fitWidth="280.0" opacity="0.12" pickOnBounds="true" preserveRatio="false">
                     <image>
                         <Image url="@../Images/LoginForm/sidebar.gif" />
                     </image>
                 </ImageView>
 
-                <!-- AI Panel -->
-                <Pane fx:id="geminiPane" prefHeight="720.0" prefWidth="354.0"
-                      visible="false"
-                      style="-fx-background-color: rgba(18,40,56,0.95);">
-                    <children>
-                        <Label layoutX="20.0" layoutY="15.0"
-                               text="AI Assistant" textFill="#f3f4d2">
-                            <font><Font name="DM Sans" size="24.0" /></font>
-                        </Label>
+                <Pane prefHeight="664.0" prefWidth="280.0" style="-fx-background-color: rgba(22,16,43,0.97);                              -fx-border-color: rgba(123,44,255,0.18);                              -fx-border-width: 0 0 0 1;" />
 
-                        <ScrollPane fx:id="geminiscrollpane"
-                                    fitToWidth="true"
-                                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                                    layoutY="60.0" prefHeight="600.0" prefWidth="354.0">
+                <!-- ── AI Panel ── -->
+                <Pane fx:id="geminiPane" prefHeight="664.0" prefWidth="280.0" style="-fx-background-color: rgba(15,10,30,0.97);" visible="false">
+                    <children>
+                        <HBox alignment="CENTER_LEFT" layoutX="0" layoutY="0" prefHeight="56" prefWidth="280" spacing="10" style="-fx-background-color: #1c1436;                                      -fx-border-color: rgba(123,44,255,0.2);                                      -fx-border-width: 0 0 1 0;                                      -fx-padding: 0 14 0 16;">
+                            <Label style="-fx-text-fill: #9b30ff; -fx-font-size: 18px;" text="✦" />
+                            <Label style="-fx-text-fill: #f0eaff;                                           -fx-font-size: 15px;                                           -fx-font-family: 'DM Sans';                                           -fx-font-weight: bold;" text="AI Assistant" HBox.hgrow="ALWAYS" />
+                        </HBox>
+
+                        <ScrollPane fx:id="geminiscrollpane" fitToWidth="true" hbarPolicy="NEVER" layoutY="56" prefHeight="552" prefWidth="280" style="-fx-background-color: transparent;                                            -fx-background: transparent;                                            -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
                             <content>
-                                <VBox fx:id="geminibox" prefWidth="354.0" spacing="8" />
+                                <VBox fx:id="geminibox" prefWidth="280" spacing="8">
+                                    <padding><Insets bottom="12" left="10" right="10" top="12" /></padding>
+                                </VBox>
                             </content>
                         </ScrollPane>
 
-                        <HBox layoutX="10.0" layoutY="670.0"
-                              prefHeight="40.0" prefWidth="334.0" spacing="8">
-                            <children>
-                                <TextField fx:id="geminimsg"
-                                           prefHeight="40.0" prefWidth="280.0"
-                                           promptText="Ask AI..."
-                                           styleClass="text-fields" />
-                                <!-- Fixed: calls onGeminiSendClick, NOT onSendMessageClick -->
-                                <Button fx:id="geminisend"
-                                        mnemonicParsing="false"
-                                        onAction="#onGeminiSendClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="sending-btn" text="→">
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                </Button>
-                            </children>
+                        <HBox alignment="CENTER" layoutX="10" layoutY="614" prefHeight="40" prefWidth="260" spacing="8">
+                            <TextField fx:id="geminimsg" prefHeight="38" promptText="Ask AI anything..." style="-fx-background-color: #231a3d;                                               -fx-background-radius: 19;                                               -fx-border-color: rgba(123,44,255,0.35);                                               -fx-border-radius: 19;                                               -fx-border-width: 1;                                               -fx-text-fill: #f0eaff;                                               -fx-prompt-text-fill: #6b5a8a;                                               -fx-font-size: 12px;                                               -fx-padding: 0 12 0 12;" HBox.hgrow="ALWAYS" />
+                            <Button fx:id="geminisend" mnemonicParsing="false" onAction="#onGeminiSendClick" prefHeight="38" prefWidth="38" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8);                                            -fx-background-radius: 19;                                            -fx-border-color: transparent;                                            -fx-text-fill: white;                                            -fx-font-size: 14px;" text="➤">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
                         </HBox>
                     </children>
                 </Pane>
 
-                <!-- Info Panel -->
-                <Pane fx:id="infoPane" prefHeight="720.0" prefWidth="354.0"
-                      style="-fx-background-color: rgba(18,40,56,0.95);">
+                <!-- ── Info / Profile Panel ── -->
+                <Pane fx:id="infoPane" prefHeight="664.0" prefWidth="280.0" style="-fx-background-color: transparent;">
                     <children>
 
-                        <Button fx:id="createGroupBtn"
-                                layoutX="27.0" layoutY="20.0"
-                                mnemonicParsing="false"
-                                onAction="#createGroup"
-                                prefHeight="40.0" prefWidth="300.0"
-                                styleClass="create-group-btn"
-                                text="＋  Create Chat Group">
-                            <font><Font name="DM Sans" size="14.0" /></font>
+                        <Button fx:id="createGroupBtn" layoutX="16" layoutY="14" mnemonicParsing="false" onAction="#createGroup" prefHeight="36" prefWidth="248" style="-fx-background-color: rgba(123,44,255,0.2);                                        -fx-background-radius: 18;                                        -fx-border-color: rgba(123,44,255,0.5);                                        -fx-border-radius: 18;                                        -fx-border-width: 1;                                        -fx-text-fill: #c4b0ff;                                        -fx-font-size: 13px;                                        -fx-font-family: 'DM Sans';" text="＋  New Group">
                             <cursor><Cursor fx:constant="HAND" /></cursor>
                         </Button>
 
-                        <ImageView fx:id="userImage1"
-                                   fitHeight="80.0" fitWidth="80.0"
-                                   layoutX="137.0" layoutY="80.0">
-                            <clip>
-                                <Circle fx:id="userImageClip1"
-                                        centerX="40" centerY="40" radius="40" />
-                            </clip>
-                        </ImageView>
+                        <Rectangle fill="rgba(123,44,255,0.15)" height="1" layoutX="16" layoutY="62" width="248" />
 
-                        <Button fx:id="changeDOBtn"
-                                layoutX="200.0" layoutY="140.0"
-                                mnemonicParsing="false"
-                                onAction="#onChangeDisplayPictureClick"
-                                prefHeight="30.0" prefWidth="30.0"
-                                style="-fx-background-color: #a0b9a5;
-                                       -fx-background-radius: 15;
-                                       -fx-border-width: 0;"
-                                text="📷">
-                            <font><Font size="14.0" /></font>
-                        </Button>
+                        <StackPane layoutX="100" layoutY="76" prefHeight="80" prefWidth="80">
+                            <Circle centerX="40" centerY="40" fill="#251a45" radius="40" stroke="rgba(123,44,255,0.4)" strokeWidth="2" />
+                            <ImageView fx:id="userImage1" fitHeight="76" fitWidth="76">
+                                <clip>
+                                    <Circle fx:id="userImageClip1" centerX="38" centerY="38" radius="38" />
+                                </clip>
+                            </ImageView>
+                        </StackPane>
 
-                        <Label layoutX="27.0" layoutY="200.0"
-                               text="Username" textFill="#f3f4d2">
-                            <font><Font name="DM Sans" size="14.0" /></font>
-                        </Label>
-                        <Label fx:id="USERNAME"
-                               layoutX="27.0" layoutY="225.0"
-                               prefHeight="25.0" prefWidth="300.0"
-                               textFill="#a0b9a5">
-                            <font><Font name="DM Sans" size="16.0" /></font>
-                        </Label>
+                        <VBox layoutX="16" layoutY="170" spacing="2">
+                            <Label style="-fx-text-fill: rgba(155,136,204,0.6);                                           -fx-font-size: 10px;                                           -fx-font-family: 'DM Sans';" text="USERNAME" />
+                            <Label fx:id="USERNAME" prefWidth="248" style="-fx-text-fill: #f0eaff;                                           -fx-font-size: 15px;                                           -fx-font-family: 'DM Sans';                                           -fx-font-weight: bold;" />
+                        </VBox>
 
-                        <Label layoutX="27.0" layoutY="270.0"
-                               text="Status" textFill="#f3f4d2">
-                            <font><Font name="DM Sans" size="14.0" /></font>
-                        </Label>
+                        <Rectangle fill="rgba(123,44,255,0.15)" height="1" layoutX="16" layoutY="218" width="248" />
 
-                        <Button fx:id="geminiBTN"
-                                layoutX="27.0" layoutY="660.0"
-                                mnemonicParsing="false"
-                                onAction="#onGeminiButtonClick"
-                                styleClass="sending-btn"
-                                text="✦ AI"
-                                prefWidth="70" prefHeight="40">
+                        <VBox layoutX="16" layoutY="228" spacing="4">
+                            <Label style="-fx-text-fill: rgba(155,136,204,0.6);                                           -fx-font-size: 10px;                                           -fx-font-family: 'DM Sans';" text="STATUS" />
+                            <HBox alignment="CENTER_LEFT" spacing="6">
+                                <Circle fill="#22c55e" radius="5" />
+                                <Label style="-fx-text-fill: #22c55e;                                               -fx-font-size: 13px;                                               -fx-font-family: 'DM Sans';" text="Active now" />
+                            </HBox>
+                        </VBox>
+
+                        <Rectangle fill="rgba(123,44,255,0.15)" height="1" layoutX="16" layoutY="274" width="248" />
+
+                        <Button fx:id="geminiBTN" layoutX="16" layoutY="614" mnemonicParsing="false" onAction="#onGeminiButtonClick" prefHeight="36" prefWidth="248" style="-fx-background-color: linear-gradient(to right, rgba(123,44,255,0.3), rgba(109,18,232,0.3));                                        -fx-background-radius: 18;                                        -fx-border-color: rgba(123,44,255,0.5);                                        -fx-border-radius: 18;                                        -fx-border-width: 1;                                        -fx-text-fill: #c4b0ff;                                        -fx-font-size: 13px;                                        -fx-font-family: 'DM Sans';" text="✦  Ask AI Assistant">
                             <cursor><Cursor fx:constant="HAND" /></cursor>
-                            <font><Font name="DM Sans" size="14.0" /></font>
                         </Button>
 
                     </children>
@@ -211,286 +296,21 @@
             </children>
         </StackPane>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- MAIN CHAT AREA                                           -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <Pane layoutX="319.0" prefHeight="720.0" prefWidth="607.0"
-              style="-fx-background-color: #2e1a47;">
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!--  EMOJI PICKER OVERLAY                                      -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <Pane fx:id="emojipane_test" onMouseClicked="#onCloseEmojiPicker" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: rgba(0,0,0,0.4);" visible="false">
             <children>
-                <!-- VBox splits: chat area grows, input bar stays at bottom -->
-                <VBox fx:id="chatbody" prefHeight="720.0" prefWidth="607.0">
-                    <children>
-
-                        <!-- Chat area (grows to fill space) -->
-                        <Pane VBox.vgrow="ALWAYS" prefWidth="607.0">
-                            <children>
-
-                                <!-- Background image -->
-                                <ImageView fx:id="chatBG"
-                                           fitHeight="650.0" fitWidth="607.0"
-                                           layoutY="70.0"
-                                           pickOnBounds="true"
-                                           preserveRatio="false"
-                                           opacity="0.35">
-                                    <image>
-                                        <Image url="@../Images/hogwarts_background.jpg" />
-                                    </image>
-                                </ImageView>
-
-                                <!-- Messages scroll -->
-                                <ScrollPane fx:id="chatScroll"
-                                            styleClass="chat-scroll"
-                                            fitToWidth="true"
-                                            hbarPolicy="NEVER"
-                                            vbarPolicy="AS_NEEDED"
-                                            layoutY="70.0"
-                                            prefHeight="650.0"
-                                            prefWidth="607.0">
-                                    <content>
-                                        <VBox fx:id="msgbox"
-                                              prefWidth="607.0"
-                                              spacing="8">
-                                            <padding>
-                                                <Insets bottom="12" top="8" />
-                                            </padding>
-                                        </VBox>
-                                    </content>
-                                </ScrollPane>
-
-                                <!-- Group profile (covers message area; opened from group name / header) -->
-                                <VBox fx:id="groupProfilePane"
-                                      layoutY="70.0"
-                                      managed="false"
-                                      prefHeight="650.0"
-                                      prefWidth="607.0"
-                                      spacing="0.0"
-                                      visible="false"
-                                      styleClass="group-profile-pane" />
-
-                                <!-- Loading / error overlay (chat messages area) -->
-                                <StackPane fx:id="chatStateOverlay"
-                                           layoutY="70.0"
-                                           prefHeight="650.0" prefWidth="607.0"
-                                           pickOnBounds="false"
-                                           mouseTransparent="true">
-                                    <children>
-                                        <VBox fx:id="chatLoadingPane"
-                                              alignment="CENTER"
-                                              spacing="12.0"
-                                              managed="false"
-                                              visible="false"
-                                              style="-fx-background-color: rgba(46,26,71,0.92);"
-                                              maxHeight="Infinity"
-                                              maxWidth="Infinity">
-                                            <ProgressIndicator fx:id="chatLoadingIndicator" prefWidth="40.0" prefHeight="40.0" />
-                                            <Label fx:id="chatLoadingLabel"
-                                                   text="Loading messages..."
-                                                   textFill="#a0b9a5">
-                                                <font><Font name="DM Sans" size="13.0" /></font>
-                                            </Label>
-                                        </VBox>
-                                        <VBox fx:id="chatErrorPane"
-                                              alignment="TOP_CENTER"
-                                              managed="false"
-                                              visible="false"
-                                              pickOnBounds="false"
-                                              StackPane.alignment="TOP_CENTER">
-                                            <padding><Insets top="12.0" left="12.0" right="12.0" /></padding>
-                                            <Label fx:id="chatErrorLabel"
-                                                   wrapText="true"
-                                                   maxWidth="560.0"
-                                                   textFill="#ffaaaa"
-                                                   style="-fx-background-color: rgba(180,40,40,0.35); -fx-background-radius: 8; -fx-padding: 10 14;">
-                                                <font><Font name="DM Sans" size="12.0" /></font>
-                                            </Label>
-                                        </VBox>
-                                    </children>
-                                </StackPane>
-
-                                <!-- Call overlay (hidden) -->
-                                <StackPane fx:id="callOverlay"
-                                           layoutY="70.0"
-                                           prefHeight="650.0" prefWidth="607.0"
-                                           style="-fx-background-color: rgba(0,0,0,0.8);"
-                                           visible="false" />
-
-                                <!-- Chat header -->
-                                <HBox fx:id="clientCard"
-                                      alignment="CENTER_LEFT"
-                                      prefHeight="70.0" prefWidth="607.0"
-                                      spacing="15.0"
-                                      styleClass="header-user">
-                                    <padding>
-                                        <Insets left="15.0" right="15.0" />
-                                    </padding>
-                                    <children>
-                                        <ImageView fx:id="clientImage"
-                                                   fitHeight="50.0" fitWidth="50.0">
-                                            <clip>
-                                                <Circle fx:id="clientImageClip"
-                                                        centerX="25" centerY="25"
-                                                        radius="25" />
-                                            </clip>
-                                        </ImageView>
-                                        <Label fx:id="clientIdLabel"
-                                               maxWidth="1.7976931348623157E308"
-                                               HBox.hgrow="ALWAYS"
-                                               text="Select a chat"
-                                               textFill="#f3f4d2">
-                                            <font><Font name="DM Sans" size="16.0" /></font>
-                                        </Label>
-
-                                        <TextField fx:id="searchMessages"
-                                                   prefWidth="150.0"
-                                                   promptText="Search messages..."
-                                                   styleClass="text-fields"
-                                                   visible="false"
-                                                   managed="false" />
-
-                                        <Pane HBox.hgrow="ALWAYS" />
-
-                                        <HBox fx:id="headerButtonsBox"
-                                              spacing="10" alignment="CENTER_RIGHT">
-                                            <Button fx:id="searchBtn"
-                                                    mnemonicParsing="false"
-                                                    onAction="#onSearchButtonClick"
-                                                    styleClass="info-btn"
-                                                    prefHeight="40.0" prefWidth="40.0"
-                                                    text="🔍">
-                                                <font><Font size="16.0" /></font>
-                                            </Button>
-                                            <Button fx:id="audiocall"
-                                                    mnemonicParsing="false"
-                                                    onAction="#onAudioCallClick"
-                                                    styleClass="call-btn call-icon-btn"
-                                                    prefHeight="40.0" prefWidth="40.0"
-                                                    text="☎">
-                                                <font><Font size="16.0" /></font>
-                                            </Button>
-                                            <Button fx:id="videocall"
-                                                    mnemonicParsing="false"
-                                                    onAction="#onVideoCallClick"
-                                                    styleClass="call-btn"
-                                                    prefHeight="40.0" prefWidth="40.0"
-                                                    text="📹">
-                                                <font><Font size="16.0" /></font>
-                                            </Button>
-                                            <Button fx:id="infobtn"
-                                                    mnemonicParsing="false"
-                                                    onAction="#onInfoButtonClick"
-                                                    styleClass="info-btn"
-                                                    prefHeight="40.0" prefWidth="40.0"
-                                                    text="ℹ">
-                                                <font><Font size="16.0" /></font>
-                                            </Button>
-                                        </HBox>
-                                    </children>
-                                </HBox>
-
-                            </children>
-                        </Pane>
-
-                        <!-- Message Input Bar (pinned to bottom) -->
-                        <HBox prefHeight="70.0" prefWidth="607.0"
-                              spacing="8.0"
-                              style="-fx-background-color: #2b1d44; -fx-padding: 15;">
-                            <children>
-                                <Button fx:id="sendImg"
-                                        mnemonicParsing="false"
-                                        onAction="#onSendImageClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="sending-btn" text="+">
-                                    <font><Font name="DM Sans" size="20.0" /></font>
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                </Button>
-                                <Button fx:id="sendFile"
-                                        mnemonicParsing="false"
-                                        onAction="#onSendFileClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="sending-btn" text="📎">
-                                    <font><Font name="DM Sans" size="16.0" /></font>
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                </Button>
-
-                                <TextField fx:id="msgField"
-                                           prefHeight="40.0"
-                                           HBox.hgrow="ALWAYS"
-                                           promptText="Type a message..."
-                                           styleClass="text-fields" />
-
-                                <Button fx:id="voiceToText"
-                                        mnemonicParsing="false"
-                                        onAction="#onVoiceToTextClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="info-btn" text="🎤">
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                    <font><Font size="16.0" /></font>
-                                </Button>
-
-                                <Button fx:id="sendEmoji"
-                                        mnemonicParsing="false"
-                                        onAction="#onEmojiButtonClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="sending-btn" text="😊">
-                                    <font><Font size="16.0" /></font>
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                </Button>
-
-                                <Button fx:id="sendMsg"
-                                        mnemonicParsing="false"
-                                        onAction="#onSendMessageClick"
-                                        prefHeight="40.0" prefWidth="40.0"
-                                        styleClass="send-msg" text="➤">
-                                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                                    <font><Font name="DM Sans" size="18.0" /></font>
-                                </Button>
-                            </children>
-                        </HBox>
-
-                    </children>
-                </VBox>
-            </children>
-        </Pane>
-
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- EMOJI PICKER OVERLAY                                     -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- Clicking the backdrop closes the picker -->
-        <Pane fx:id="emojipane_test"
-              prefHeight="720.0" prefWidth="1280.0"
-              visible="false"
-              onMouseClicked="#onCloseEmojiPicker"
-              style="-fx-background-color: rgba(0,0,0,0.35);">
-            <children>
-                <!-- consumeEvent prevents backdrop close when clicking inside picker -->
-                <ScrollPane fx:id="emojiscroller"
-                            hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                            layoutX="530.0" layoutY="380.0"
-                            prefHeight="280.0" prefWidth="260.0"
-                            onMouseClicked="#consumeEvent"
-                            style="-fx-background-color: #f3f4d2;
-                                   -fx-background-radius: 12;
-                                   -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),12,0,0,4);">
+                <ScrollPane fx:id="emojiscroller" hbarPolicy="NEVER" layoutX="590.0" layoutY="390.0" onMouseClicked="#consumeEvent" prefHeight="280.0" prefWidth="300.0" style="-fx-background-color: #1c1436;                                    -fx-background-radius: 14;                                    -fx-border-color: rgba(123,44,255,0.4);                                    -fx-border-radius: 14;                                    -fx-border-width: 1;                                    -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),18,0,0,6);" vbarPolicy="AS_NEEDED">
                     <content>
-                        <VBox fx:id="emojibox"
-                              prefWidth="260.0"
-                              style="-fx-background-color: #f3f4d2;"
-                              spacing="4">
-                            <padding><Insets bottom="8" left="8" right="8" top="8" /></padding>
+                        <VBox fx:id="emojibox" prefWidth="300.0" spacing="4" style="-fx-background-color: #1c1436;">
+                            <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
                         </VBox>
                     </content>
                 </ScrollPane>
-
-                <Button fx:id="closeEmojiPicker"
-                        layoutX="774.0" layoutY="354.0"
-                        mnemonicParsing="false"
-                        onAction="#onCloseEmojiPicker"
-                        prefHeight="26.0" prefWidth="26.0"
-                        style="-fx-background-color: #5e8581;
-                               -fx-text-fill: #f3f4d2;
-                               -fx-background-radius: 13;"
-                        text="×">
-                    <font><Font name="DM Sans" size="14.0" /></font>
+                <Button fx:id="closeEmojiPicker" layoutX="884.0" layoutY="364.0" mnemonicParsing="false" onAction="#onCloseEmojiPicker" prefHeight="26" prefWidth="26" style="-fx-background-color: #7B2CFF;                                -fx-background-radius: 13;                                -fx-border-color: transparent;                                -fx-text-fill: white;                                -fx-font-size: 11px;" text="✕">
+                    <cursor><Cursor fx:constant="HAND" /></cursor>
                 </Button>
             </children>
         </Pane>

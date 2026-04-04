@@ -26,6 +26,9 @@ public class AuthenticationService {
         String encryptedPassword = PasswordUtil.encryptPassword(password);
         String encryptedRecoveryAnswer = PasswordUtil.encryptPassword(recoveryAnswer);
 
+        // Normalize email case to lower-case for consistency
+        String normalizedEmail = email.trim().toLowerCase();
+
         // If no profile picture is provided, keep it as null
         String picToSave = (profilePictureBase64 != null && !profilePictureBase64.isEmpty()) ? profilePictureBase64 : null;
 
@@ -42,7 +45,7 @@ public class AuthenticationService {
 
             pstmt.setString(1, firstName);
             pstmt.setString(2, lastName);
-            pstmt.setString(3, email);
+            pstmt.setString(3, normalizedEmail);
             pstmt.setString(4, encryptedPassword);
             pstmt.setString(5, recoveryQuestion);
             pstmt.setString(6, encryptedRecoveryAnswer);
@@ -67,12 +70,13 @@ public class AuthenticationService {
 
     // Login check
     public User login(String email, String password) {
+        String normalizedEmail = email.trim().toLowerCase();
         String sql = "SELECT * FROM Users WHERE email = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, email);
+            pstmt.setString(1, normalizedEmail);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -91,6 +95,31 @@ public class AuthenticationService {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    // Get user profile from database (firstName|lastName|profilePicBase64)
+    public String getUserProfile(String email) {
+        String sql = "SELECT firstName, lastName, profilePicture FROM Users WHERE email = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String firstName = rs.getString("firstName");
+                String lastName = rs.getString("lastName");
+                String profilePicture = rs.getString("profilePicture");
+                if (firstName == null) firstName = "";
+                if (lastName == null) lastName = "";
+                if (profilePicture == null) profilePicture = "";
+                return firstName + "|" + lastName + "|" + profilePicture;
+            }
+            return "ERROR";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
         }
     }
 
@@ -293,6 +322,37 @@ public class AuthenticationService {
         }
     }
 
+
+    public String getSentRequests(String email) {
+    String sql = """
+    SELECT u.email, u.firstName, u.lastName, u.profilePicture
+    FROM Friends f
+    JOIN Users u ON u.email = f.email2
+    WHERE f.email1 = ? AND f.status = 'pending'
+""";
+    try (Connection conn = DatabaseManager.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, email);
+        ResultSet rs = pstmt.executeQuery();
+
+        StringBuilder sb = new StringBuilder();
+        while (rs.next()) {
+            if (sb.length() > 0) sb.append(",");
+            sb.append(rs.getString("email"))
+                    .append(":").append(rs.getString("firstName"))
+                    .append(":").append(rs.getString("lastName"));
+        }
+        return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return "ERROR";
+    }
+}
+
+
+
     // Accept Friend Request
     public boolean acceptFriendRequest(String senderEmail, String receiverEmail) {
         String sql = """
@@ -426,6 +486,53 @@ public class AuthenticationService {
         } catch (SQLException e) {
             e.printStackTrace();
             return "ERROR";
+        }
+    }
+
+    // Update user name and last name
+    public boolean updateName(String email, String firstName, String lastName) {
+        String sql = "UPDATE Users SET firstName = ?, lastName = ? WHERE email = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, lastName);
+            pstmt.setString(3, email);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Update user password
+    public boolean updatePassword(String email, String newPassword, String confirmPassword) {
+        if (newPassword == null || confirmPassword == null || !newPassword.equals(confirmPassword)) {
+            return false;
+        }
+        String encrypted = PasswordUtil.encryptPassword(newPassword);
+        String sql = "UPDATE Users SET password = ? WHERE email = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, encrypted);
+            pstmt.setString(2, email);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Update user profile picture
+    public boolean updateProfilePicture(String email, String profilePictureBase64) {
+        String sql = "UPDATE Users SET profilePicture = ? WHERE email = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, profilePictureBase64);
+            pstmt.setString(2, email);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

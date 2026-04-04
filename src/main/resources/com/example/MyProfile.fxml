@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.MyProfileController"
+            prefWidth="320.0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 4);">
+
+    <VBox AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <!-- Back + Close -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <padding><Insets top="8" left="10" right="10" bottom="5" /></padding>
+            <Label text="←" onMouseClicked="#goBack"
+                   style="-fx-text-fill: #555; -fx-cursor: hand; -fx-font-size: 16px;" />
+        </HBox>
+
+        <!-- Profile Picture -->
+        <HBox alignment="CENTER">
+            <VBox.margin><Insets top="5" bottom="10" /></VBox.margin>
+            <ImageView fx:id="profileImageView"
+                       fitHeight="90.0" fitWidth="90.0"
+                       preserveRatio="false" />
+        </HBox>
+
+        <!-- Info Fields -->
+        <VBox spacing="8.0">
+            <padding><Insets left="15" right="15" bottom="20" /></padding>
+
+            <!-- First Name -->
+            <HBox spacing="0.0" style="-fx-background-color: #f4f3f8; -fx-background-radius: 8;">
+                <Label text="Firstname:"
+                       prefWidth="110.0"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15; -fx-background-color: #bcaeff; -fx-background-radius: 8 0 0 8;" />
+                <Label fx:id="firstNameLabel"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15;" />
+            </HBox>
+
+            <!-- Last Name -->
+            <HBox spacing="0.0" style="-fx-background-color: #f4f3f8; -fx-background-radius: 8;">
+                <Label text="Lastname:"
+                       prefWidth="110.0"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15; -fx-background-color: #bcaeff; -fx-background-radius: 8 0 0 8;" />
+                <Label fx:id="lastNameLabel"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15;" />
+            </HBox>
+
+            <!-- Email -->
+            <HBox spacing="0.0" style="-fx-background-color: #f4f3f8; -fx-background-radius: 8;">
+                <Label text="Email:"
+                       prefWidth="110.0"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15; -fx-background-color: #bcaeff; -fx-background-radius: 8 0 0 8;" />
+                <Label fx:id="emailLabel"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-font-size: 14px; -fx-text-fill: #1a1a1a; -fx-padding: 12 10 12 15;" />
+            </HBox>
+
+        </VBox>
+    </VBox>
+</AnchorPane>

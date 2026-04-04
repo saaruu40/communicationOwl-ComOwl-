@@ -1,19 +1,346 @@
-/* Set general background */
-.list-cell {
+/* Modern Messenger-like Design */
+
+* {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", "Roboto", sans-serif;
+}
+
+/* Top Bar */
+.top-bar {
+    -fx-background-color: linear-gradient(to right, #0a0118, #1a0a3a);
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 0 1 0;
+}
+
+.logo {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Times New Roman";
+}
+
+.user-name {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+}
+
+.icon-button, .profile-button {
+    -fx-cursor: hand;
     -fx-background-color: transparent;
-    -fx-text-fill: #e8deff;
 }
 
-.list-cell:selected {
-    -fx-background-color: #4d2b83;
-    -fx-text-fill: #ffffff;
+.icon {
+    -fx-font-size: 22px;
+    -fx-text-fill: #bcaeff;
 }
 
-.list-view {
-    -fx-background-color: rgba(18, 8, 43, 0.5);
-    -fx-border-color: rgba(145, 85, 255, 0.75);
+.icon:hover, .profile-button:hover {
+    -fx-opacity: 0.8;
 }
 
-.scroll-bar {
+.badge {
+    -fx-background-color: #ff4444;
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10px;
+    -fx-padding: 1px 4px 1px 4px;
+    -fx-min-width: 18px;
+    -fx-alignment: center;
+}
+
+/* Left Sidebar */
+.sidebar-left {
+    -fx-background-color: #0f0728;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 1 0 0;
+    -fx-pref-width: 320px;
+    -fx-min-width: 280px;
+}
+
+.user-profile-area {
+    -fx-background-color: #1a0a3a;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 0 1 0;
+}
+
+.user-name-large {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.user-email {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 11px;
+}
+
+/* Search */
+.search-field {
+    -fx-background-color: #1e1038;
+    -fx-border-color: #7B2CFF;
+    -fx-border-radius: 25px;
+    -fx-background-radius: 25px;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #bcaeff;
+    -fx-padding: 8px 15px;
+    -fx-font-size: 13px;
+    -fx-border-width: 1px;
+    -fx-margin: 10px;
+}
+
+.search-field:focused {
+    -fx-border-color: #9b4dff;
+    -fx-border-width: 2px;
+}
+
+.search-results-panel {
+    -fx-background-color: #1e1038;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 0 1 0;
+    -fx-max-height: 250px;
+}
+
+.search-results-list {
     -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.search-results-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 8px 12px;
+}
+
+.search-results-list .list-cell:hover {
+    -fx-background-color: #2a1a4a;
+}
+
+/* List Header */
+.list-header {
+    -fx-background-color: #0f0728;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 0 1 0;
+}
+
+.list-header-label {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.5px;
+}
+
+.refresh-icon {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.refresh-icon:hover {
+    -fx-text-fill: #9b4dff;
+}
+
+/* Friends List */
+.friends-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.friends-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 8px 12px;
+    -fx-border-color: #2a1a4a;
+    -fx-border-width: 0 0 1 0;
+}
+
+.friends-list .list-cell:hover {
+    -fx-background-color: #1e1038;
+}
+
+.friends-list .list-cell:selected {
+    -fx-background-color: #2a1a4a;
+    -fx-border-color: #7B2CFF;
+}
+
+/* Friend Row */
+.friend-row {
+    -fx-alignment: CENTER_LEFT;
+    -fx-spacing: 12px;
+}
+
+.online-dot {
+    -fx-fill: #2ecc71;
+    -fx-radius: 6px;
+}
+
+.offline-dot {
+    -fx-fill: #7f8c8d;
+    -fx-radius: 6px;
+}
+
+.friend-name {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+}
+
+.last-message {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 11px;
+}
+
+.message-time {
+    -fx-text-fill: #6c5a8e;
+    -fx-font-size: 10px;
+}
+
+/* Chat Container */
+.chat-container {
+    -fx-background-color: #120838;
+}
+
+.no-chat-placeholder {
+    -fx-background-color: #120838;
+}
+
+.placeholder-icon {
+    -fx-font-size: 48px;
+    -fx-text-fill: #bcaeff;
+}
+
+.placeholder-text {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 16px;
+}
+
+/* Chat View Styles */
+.chat-border-pane {
+    -fx-background-color: #120838;
+}
+
+.chat-header {
+    -fx-background-color: #1a0a3a;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 0 0 1 0;
+}
+
+.chat-header-content {
+    -fx-background-color: #1a0a3a;
+}
+
+.chat-user-name {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.chat-user-status {
+    -fx-text-fill: #2ecc71;
+    -fx-font-size: 11px;
+}
+
+.call-icon, .info-icon {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 20px;
+    -fx-cursor: hand;
+}
+
+.call-icon:hover, .info-icon:hover {
+    -fx-text-fill: #9b4dff;
+}
+
+/* Message Scroll Pane */
+.message-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.message-scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.message-container {
+    -fx-background-color: transparent;
+}
+
+/* Message Bubbles */
+.message-bubble-sent {
+    -fx-background-color: linear-gradient(to right, #7B2CFF, #9b4dff);
+    -fx-text-fill: white;
+    -fx-padding: 10px 14px;
+    -fx-background-radius: 18px 18px 4px 18px;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+    -fx-max-width: 400px;
+}
+
+.message-bubble-received {
+    -fx-background-color: #1e1038;
+    -fx-text-fill: #f0eaff;
+    -fx-padding: 10px 14px;
+    -fx-background-radius: 18px 18px 18px 4px;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+    -fx-max-width: 400px;
+}
+
+.message-time-sent, .message-time-received {
+    -fx-text-fill: #6c5a8e;
+    -fx-font-size: 10px;
+    -fx-padding: 2px 0 0 0;
+}
+
+/* Message Input Area */
+.message-input-area {
+    -fx-background-color: #1a0a3a;
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.input-container {
+    -fx-background-color: #0f0728;
+    -fx-border-radius: 25px;
+    -fx-background-radius: 25px;
+    -fx-margin: 5px;
+}
+
+.input-icon {
+    -fx-text-fill: #bcaeff;
+    -fx-font-size: 20px;
+    -fx-cursor: hand;
+}
+
+.input-icon:hover {
+    -fx-text-fill: #9b4dff;
+}
+
+.message-input-field {
+    -fx-background-color: #1e1038;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #bcaeff;
+    -fx-font-size: 13px;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 20px;
+}
+
+.message-input-field:focused {
+    -fx-border-color: #7B2CFF;
+    -fx-border-width: 1px;
+    -fx-border-radius: 20px;
+}
+
+.send-button {
+    -fx-text-fill: #7B2CFF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 6px 12px;
+    -fx-background-color: transparent;
+    -fx-border-radius: 20px;
+}
+
+.send-button:hover {
+    -fx-text-fill: #9b4dff;
 }

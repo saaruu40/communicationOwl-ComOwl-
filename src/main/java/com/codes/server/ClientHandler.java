@@ -62,6 +62,8 @@ public class ClientHandler implements Runnable {
     private String processCommand(String command, PrintWriter out) {
         String[] parts = command.split("\\|");
 
+        System.out.println("[Server] processCommand command='" + command + "' parts0='" + (parts.length>0 ? parts[0] : "<empty>") + "'");
+
         try {
             if (parts[0].equalsIgnoreCase("SIGNUP")) {
 
@@ -76,8 +78,9 @@ public class ClientHandler implements Runnable {
                         : "SIGNUP_FAILED|Email already exists or passwords don't match";
 
             } else if (parts[0].equalsIgnoreCase("LOGIN")) {
-
-                User user = authService.login(parts[1], parts[2]);
+                String[] loginParts = command.split("\\|", 3);
+                if (loginParts.length < 3) return "LOGIN_FAILED";
+                User user = authService.login(loginParts[1], loginParts[2]);
 
                 return (user != null)
                         ? "LOGIN_SUCCESS|" + user.getFirstName()
@@ -91,7 +94,12 @@ public class ClientHandler implements Runnable {
                         ? "QUESTION|" + question
                         : "EMAIL_NOT_FOUND";
 
-            }else if (parts[0].equalsIgnoreCase("CHECK_ANSWER")) {
+            } else if (parts[0].equalsIgnoreCase("GET_USER_INFO") || parts[0].equalsIgnoreCase("GET_PROFILE")) {
+                if (parts.length < 2) return "ERROR";
+                String profile = authService.getUserProfile(parts[1]);
+                return profile != null ? profile : "ERROR";
+
+            } else if (parts[0].equalsIgnoreCase("CHECK_ANSWER")) {
                 boolean success = authService.checkRecoveryAnswer(parts[1], parts[2]);
                 return success ? "ANSWER_CORRECT" : "ANSWER_WRONG";
             } else if (parts[0].equalsIgnoreCase("RESET_PASSWORD")) {
@@ -104,11 +112,40 @@ public class ClientHandler implements Runnable {
                         ? "RESET_SUCCESS"
                         : "RESET_FAILED|Wrong answer or passwords don't match";
             }else if (parts[0].equalsIgnoreCase("SEND_REQUEST")) {
-                String result = authService.sendFriendRequest(parts[1], parts[2]);
+                String senderEmail = normEmail(parts[1]);
+                String receiverEmail = normEmail(parts[2]);
+                String result = authService.sendFriendRequest(senderEmail, receiverEmail);
+
+                if ("REQUEST_SENT".equals(result)) {
+                    String senderProfile = authService.getUserProfile(senderEmail);
+                    String senderFirstName = senderEmail;
+                    if (senderProfile != null && !senderProfile.equals("ERROR")) {
+                        String[] profileParts = senderProfile.split("\\|", 2);
+                        if (profileParts.length > 0 && !profileParts[0].isBlank()) {
+                            senderFirstName = profileParts[0];
+                        }
+                    }
+                    OnlineUserManager.sendToUser(receiverEmail,
+                            "NOTIFICATION|FRIEND_REQUEST|" + senderEmail + "|" + senderFirstName);
+                }
                 return result;
 
             } else if (parts[0].equalsIgnoreCase("ACCEPT_REQUEST")) {
-                boolean success = authService.acceptFriendRequest(parts[1], parts[2]);
+                String senderEmail = normEmail(parts[1]);
+                String receiverEmail = normEmail(parts[2]);
+                boolean success = authService.acceptFriendRequest(senderEmail, receiverEmail);
+                if (success) {
+                    String receiverProfile = authService.getUserProfile(receiverEmail);
+                    String receiverFirstName = receiverEmail;
+                    if (receiverProfile != null && !receiverProfile.equals("ERROR")) {
+                        String[] profileParts = receiverProfile.split("\\|", 2);
+                        if (profileParts.length > 0 && !profileParts[0].isBlank()) {
+                            receiverFirstName = profileParts[0];
+                        }
+                    }
+                    OnlineUserManager.sendToUser(senderEmail,
+                            "NOTIFICATION|FRIEND_REQUEST_ACCEPTED|" + receiverEmail + "|" + receiverFirstName);
+                }
                 return success ? "ACCEPT_SUCCESS" : "ACCEPT_FAILED";
 
             } else if (parts[0].equalsIgnoreCase("DECLINE_REQUEST")) {
@@ -119,7 +156,7 @@ public class ClientHandler implements Runnable {
                 String result = authService.getPendingRequests(parts[1]);
                 return "PENDING|" + result;
 
-            } else if (parts[0].equalsIgnoreCase("GET_FRIENDS")) {
+            } else if (parts[0].equalsIgnoreCase("GET_FRIENDS") || parts[0].equalsIgnoreCase("GET_FRIEND_LIST")) {
                 String result = authService.getFriendList(parts[1]);
                 return "FRIENDS|" + result;
 
@@ -172,6 +209,25 @@ public class ClientHandler implements Runnable {
                 if ("ERROR".equals(result)) return result;
                 return "INVITE_USERS|" + result;
 
+            } else if (parts[0].equalsIgnoreCase("UPDATE_NAME")) {
+                // UPDATE_NAME|email|firstName|lastName
+                if (parts.length < 4) return "UPDATE_FAILED";
+                boolean ok = authService.updateName(parts[1], parts[2], parts[3]);
+                return ok ? "UPDATE_SUCCESS" : "UPDATE_FAILED";
+
+            } else if (parts[0].equalsIgnoreCase("UPDATE_PASSWORD")) {
+                // UPDATE_PASSWORD|email|newPassword|confirmPassword
+                if (parts.length < 4) return "UPDATE_FAILED";
+                boolean ok = authService.updatePassword(parts[1], parts[2], parts[3]);
+                return ok ? "UPDATE_SUCCESS" : "UPDATE_FAILED";
+
+            } else if (parts[0].equalsIgnoreCase("UPDATE_PICTURE")) {
+                // UPDATE_PICTURE|email|base64
+                String[] p = command.split("\\|", 3);
+                if (p.length < 3) return "UPDATE_FAILED";
+                boolean ok = authService.updateProfilePicture(p[1], p[2]);
+                return ok ? "UPDATE_SUCCESS" : "UPDATE_FAILED";
+
             } else if (parts[0].equalsIgnoreCase("GET_GROUP_INFO")) {
                 // GET_GROUP_INFO|groupId|requesterEmail
                 String data = authService.getGroupInfo(parts[1], parts[2]);
@@ -202,7 +258,18 @@ public class ClientHandler implements Runnable {
             } else if (parts[0].equalsIgnoreCase("SEND_MESSAGE")) {
                 String[] p = command.split("\\|", 4);
                 if (p.length < 4) return "MESSAGE_FAILED";
-                boolean success = authService.sendMessage(p[1], p[2], p[3]);
+                String senderEmail = normEmail(p[1]);
+                String receiverEmail = normEmail(p[2]);
+                String messageText = p[3];
+
+                boolean success = authService.sendMessage(senderEmail, receiverEmail, messageText);
+                if (success) {
+                    String snippet = messageText.length() > 40
+                            ? messageText.substring(0, 37) + "..."
+                            : messageText;
+                    OnlineUserManager.sendToUser(receiverEmail,
+                            "NOTIFICATION|NEW_MESSAGE|" + senderEmail + "|" + snippet);
+                }
                 return success ? "MESSAGE_SENT" : "MESSAGE_FAILED";
 
             } else if (parts[0].equalsIgnoreCase("SEND_GROUP_MESSAGE")) {
@@ -242,18 +309,25 @@ public class ClientHandler implements Runnable {
                 int port = Integer.parseInt(parts[2]);
                 OnlineUserManager.setVideoPort(email, port);
                 return "VIDEO_PORT_OK";
-            } else if (parts[0].equalsIgnoreCase("CALL_INVITE")) {
-                // CALL_INVITE|from|to|callId
+            }else if (parts[0].equalsIgnoreCase("GET_SENT_REQUESTS")) {
+            String result = authService.getSentRequests(parts[1]);
+            return "SENT|" + result;
+            }else if (parts[0].equalsIgnoreCase("CALL_INVITE")) {
+                // CALL_INVITE|callerEmail|receiverEmail|callId|callerName (callerName optional)
                 if (parts.length < 4) return "CALL_INVITE_FAILED";
                 String from = normEmail(parts[1]);
-                String to = normEmail(parts[2]);
+                String to   = normEmail(parts[2]);
                 String callId = parts[3];
+                // parts[4] = caller's display name (optional, falls back to email)
+                String callerName = parts.length >= 5 ? parts[4] : from;
 
                 if (CallSessionManager.isInCall(from) || CallSessionManager.isInCall(to)) {
                     return "CALL_INVITE_BUSY";
                 }
                 CallSessionManager.create(callId, from, to);
-                boolean ok = OnlineUserManager.sendToUser(to, "CALL_INVITE|" + callId + "|" + from);
+                // Push CALL_INVITE|callId|callerEmail|callerName to receiver
+                boolean ok = OnlineUserManager.sendToUser(to,
+                        "CALL_INVITE|" + callId + "|" + from + "|" + callerName);
                 if (!ok) {
                     CallSessionManager.remove(callId);
                     return "CALL_INVITE_OFFLINE";
@@ -307,17 +381,22 @@ public class ClientHandler implements Runnable {
                 CallSessionManager.remove(callId);
                 return "CALL_HANGUP_OK";
             } else if (parts[0].equalsIgnoreCase("VIDEO_INVITE")) {
-                // VIDEO_INVITE|from|to|videoId
+                // VIDEO_INVITE|callerEmail|receiverEmail|videoId|callerName (callerName optional)
                 if (parts.length < 4) return "VIDEO_INVITE_FAILED";
-                String from = normEmail(parts[1]);
-                String to = normEmail(parts[2]);
+                String from    = normEmail(parts[1]);
+                String to      = normEmail(parts[2]);
                 String videoId = parts[3];
+                String callerName = parts.length >= 5 ? parts[4] : from;
 
                 if (VideoSessionManager.isInVideo(from) || VideoSessionManager.isInVideo(to)) {
                     return "VIDEO_INVITE_BUSY";
                 }
                 VideoSessionManager.create(videoId, from, to);
-                boolean ok = OnlineUserManager.sendToUser(to, "VIDEO_INVITE|" + videoId + "|" + from);
+                // Push VIDEO_INVITE|videoId|callerEmail|callerName to receiver.
+                // NOTE: Do NOT also push CALL_INVITE — that confuses the receiver into
+                //       auto-rejecting with BUSY because callActive gets set twice.
+                boolean ok = OnlineUserManager.sendToUser(to,
+                        "VIDEO_INVITE|" + videoId + "|" + from + "|" + callerName);
                 if (!ok) {
                     VideoSessionManager.remove(videoId);
                     return "VIDEO_INVITE_OFFLINE";
@@ -346,9 +425,28 @@ public class ClientHandler implements Runnable {
                     return "VIDEO_ACCEPT_NO_VIDEO_PORT";
                 }
 
+                // Send video endpoints
                 OnlineUserManager.sendToUser(from, "VIDEO_ESTABLISHED|" + videoId + "|" + toS.address().getHostAddress() + "|" + toS.videoPort());
                 OnlineUserManager.sendToUser(to, "VIDEO_ESTABLISHED|" + videoId + "|" + fromS.address().getHostAddress() + "|" + fromS.videoPort());
+
+                // Send audio endpoints for combined video+audio call
+                if (fromS.audioPort() != null && toS.audioPort() != null) {
+                    OnlineUserManager.sendToUser(from, "CALL_ESTABLISHED|" + videoId + "|" + toS.address().getHostAddress() + "|" + toS.audioPort());
+                    OnlineUserManager.sendToUser(to, "CALL_ESTABLISHED|" + videoId + "|" + fromS.address().getHostAddress() + "|" + fromS.audioPort());
+                }
+
                 return "VIDEO_ACCEPT_OK";
+            } else if (parts[0].equalsIgnoreCase("VIDEO_HANGUP")) {
+                // VIDEO_HANGUP|videoId|from|to
+                if (parts.length < 4) return "VIDEO_HANGUP_FAILED";
+                String videoId = parts[1];
+                String from = normEmail(parts[2]);
+                String to = normEmail(parts[3]);
+
+                OnlineUserManager.sendToUser(to, "VIDEO_ENDED|" + videoId + "|" + from);
+                OnlineUserManager.sendToUser(to, "CALL_ENDED|" + videoId + "|" + from);
+                VideoSessionManager.remove(videoId);
+                return "VIDEO_HANGUP_OK";
             } else if (parts[0].equalsIgnoreCase("VIDEO_REJECT")) {
                 // VIDEO_REJECT|videoId|from|to|reason
                 if (parts.length < 4) return "VIDEO_REJECT_FAILED";

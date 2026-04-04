@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.FriendListPopupController"
+            prefWidth="280.0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 4);">
+
+    <VBox AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <padding><Insets top="12" bottom="8" left="15" right="12" /></padding>
+            <Label text="Friends" HBox.hgrow="ALWAYS"
+                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;" />
+            <Label text="✕" onMouseClicked="#closePopup"
+                   style="-fx-text-fill: #999; -fx-cursor: hand; -fx-font-size: 13px;" />
+        </HBox>
+
+        <Separator />
+
+        <!-- Search Bar -->
+        <TextField fx:id="friendSearchField"
+                   onKeyReleased="#onFriendSearchTyped"
+                   promptText="🔍 Search friends..."
+                   prefHeight="34.0"
+                   style="-fx-background-color: #f0f0f0; -fx-border-color: transparent; -fx-background-radius: 8; -fx-font-size: 13px; -fx-padding: 0 10 0 10;">
+            <VBox.margin><Insets top="10" left="12" right="12" bottom="8" /></VBox.margin>
+        </TextField>
+
+        <!-- Friend List -->
+        <ListView fx:id="friendListView"
+                  prefHeight="250.0"
+                  style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox.margin><Insets bottom="10" /></VBox.margin>
+        </ListView>
+
+    </VBox>
+</AnchorPane>
