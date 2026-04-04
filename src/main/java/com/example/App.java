@@ -76,6 +76,11 @@ public class App extends Application {
         return primaryStage;
     }
 
+    @Override
+    public void stop() {
+        // Allow graceful shutdown so webcam natively unhooks
+    }
+
     public static void main(String[] args) {
         launch();
     }

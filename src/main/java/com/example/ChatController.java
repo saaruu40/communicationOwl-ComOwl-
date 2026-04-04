@@ -259,13 +259,13 @@ public class ChatController {
     @FXML
     private void onVideoCallClick() {
         if (currentFriend == null) return;
-        showInfo("Video call with " + currentFriend.getFirstName());
+        showErrorMessage("Please use the main Chat Room interface to make Video Calls. This view does not support video.");
     }
 
     @FXML
     private void onAudioCallClick() {
         if (currentFriend == null) return;
-        showInfo("Audio call with " + currentFriend.getFirstName());
+        showErrorMessage("Please use the main Chat Room interface to make Audio Calls. This view does not support audio.");
     }
 
     @FXML

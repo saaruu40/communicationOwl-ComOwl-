@@ -187,7 +187,7 @@ public class AudioCallService {
         mic = null;
 
         try {
-            if (speakers != null) speakers.drain();
+            if (speakers != null) speakers.flush();
         } catch (Exception ignored) {}
         safeClose(speakers);
         speakers = null;

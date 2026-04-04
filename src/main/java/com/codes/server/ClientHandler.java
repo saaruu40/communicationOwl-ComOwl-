@@ -429,11 +429,7 @@ public class ClientHandler implements Runnable {
                 OnlineUserManager.sendToUser(from, "VIDEO_ESTABLISHED|" + videoId + "|" + toS.address().getHostAddress() + "|" + toS.videoPort());
                 OnlineUserManager.sendToUser(to, "VIDEO_ESTABLISHED|" + videoId + "|" + fromS.address().getHostAddress() + "|" + fromS.videoPort());
 
-                // Send audio endpoints for combined video+audio call
-                if (fromS.audioPort() != null && toS.audioPort() != null) {
-                    OnlineUserManager.sendToUser(from, "CALL_ESTABLISHED|" + videoId + "|" + toS.address().getHostAddress() + "|" + toS.audioPort());
-                    OnlineUserManager.sendToUser(to, "CALL_ESTABLISHED|" + videoId + "|" + fromS.address().getHostAddress() + "|" + fromS.audioPort());
-                }
+                // VideoCallService handles audio inherently, so we do not send CALL_ESTABLISHED.
 
                 return "VIDEO_ACCEPT_OK";
             } else if (parts[0].equalsIgnoreCase("VIDEO_HANGUP")) {
@@ -458,15 +454,6 @@ public class ClientHandler implements Runnable {
                 OnlineUserManager.sendToUser(to, "VIDEO_REJECTED|" + videoId + "|" + from + "|" + reason);
                 VideoSessionManager.remove(videoId);
                 return "VIDEO_REJECT_OK";
-            } else if (parts[0].equalsIgnoreCase("VIDEO_HANGUP")) {
-                // VIDEO_HANGUP|videoId|from|to
-                if (parts.length < 4) return "VIDEO_HANGUP_FAILED";
-                String videoId = parts[1];
-                String from = normEmail(parts[2]);
-                String to = normEmail(parts[3]);
-                OnlineUserManager.sendToUser(to, "VIDEO_ENDED|" + videoId + "|" + from);
-                VideoSessionManager.remove(videoId);
-                return "VIDEO_HANGUP_OK";
             }
 
         } catch (Exception e) {

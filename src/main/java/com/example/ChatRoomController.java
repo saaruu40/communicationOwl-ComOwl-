@@ -1733,6 +1733,19 @@ searchMessages.setOnKeyPressed(e -> {
     public void cleanup() {
         isRunning = false;
         if (messageUpdateThread != null) messageUpdateThread.interrupt();
+        
+        // Hang up active calls and stop services
+        if (callActive && activeCallId != null && selectedChatUserEmail != null) {
+            String peer = normEmail(selectedChatUserEmail);
+            if (videoCall) {
+                SocketClient.sendPersistent("VIDEO_HANGUP|" + activeCallId + "|" + normEmail(currentUserEmail) + "|" + peer);
+            } else {
+                SocketClient.sendPersistent("CALL_HANGUP|" + activeCallId + "|" + normEmail(currentUserEmail) + "|" + peer);
+            }
+        }
+        
+        if (audioCallService != null) audioCallService.stop();
+        if (videoCallService != null) videoCallService.stop();
     }
     // ─────────────────────────────────────────────────────────────────────────
     // Emoji Picker
@@ -2373,36 +2386,105 @@ searchMessages.setOnKeyPressed(e -> {
     private void showActiveVideoCallOverlay() {
         if (callOverlay == null) return;
         callOverlay.getChildren().clear();
+
+        // ── Remote feed (fills all available space) ──────────────────────
         remoteVideoView = new ImageView();
-        remoteVideoView.setFitWidth(760);
-        remoteVideoView.setFitHeight(520);
         remoteVideoView.setPreserveRatio(true);
         remoteVideoView.setSmooth(true);
+        remoteVideoView.setStyle("-fx-background-color: #0a0a0a;");
+        // Bind remote view size to the callOverlay so it fills it regardless of window size
+        remoteVideoView.fitWidthProperty().bind(callOverlay.widthProperty());
+        remoteVideoView.fitHeightProperty().bind(callOverlay.heightProperty().subtract(64));
+
+        // ── Local PiP (bottom-right corner) ──────────────────────────────
         localVideoView = new ImageView();
-        localVideoView.setFitWidth(180);
-        localVideoView.setFitHeight(135);
+        localVideoView.setFitWidth(160);
+        localVideoView.setFitHeight(120);
         localVideoView.setPreserveRatio(true);
         localVideoView.setSmooth(true);
-        localVideoView.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 10, 0, 0, 0);");
         StackPane localPane = new StackPane(localVideoView);
-        localPane.setMaxSize(180, 135);
-        localPane.setStyle("-fx-background-color: rgba(0, 0, 0, 0.4); -fx-background-radius: 10;");
-        localPane.setTranslateX(280);
-        localPane.setTranslateY(210);
-        Button hangup = new Button("✕ Hang up");
-        hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        hangup.setOnAction(e -> {
+        localPane.setMaxSize(160, 120);
+        localPane.setStyle(
+                "-fx-background-color: rgba(10,10,10,0.75);" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: rgba(255,255,255,0.2);" +
+                "-fx-border-radius: 10;" +
+                "-fx-border-width: 1;" +
+                "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.7),12,0,0,3);");
+        StackPane.setAlignment(localPane, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(localPane, new Insets(0, 14, 70, 0));
+
+        // ── Control bar ───────────────────────────────────────────────────
+        // Mute button
+        Button muteBtn = new Button("🎤  Mute");
+        muteBtn.setStyle(
+                "-fx-background-color: rgba(94,74,122,0.9);" +
+                "-fx-text-fill: white;" +
+                "-fx-background-radius: 22;" +
+                "-fx-padding: 9 20;" +
+                "-fx-font-size: 13px;" +
+                "-fx-cursor: hand;");
+        muteBtn.setOnAction(e -> {
+            boolean nowMuted = !videoCallService.isMicMuted();
+            videoCallService.setMicMuted(nowMuted);
+            muteBtn.setText(nowMuted ? "🔇  Unmute" : "🎤  Mute");
+            muteBtn.setStyle(nowMuted
+                    ? "-fx-background-color: rgba(230,126,34,0.9); -fx-text-fill: white; -fx-background-radius: 22; -fx-padding: 9 20; -fx-font-size: 13px; -fx-cursor: hand;"
+                    : "-fx-background-color: rgba(94,74,122,0.9); -fx-text-fill: white; -fx-background-radius: 22; -fx-padding: 9 20; -fx-font-size: 13px; -fx-cursor: hand;");
+        });
+
+        // Camera toggle button
+        Button camBtn = new Button("📷  Cam Off");
+        camBtn.setStyle(
+                "-fx-background-color: rgba(94,74,122,0.9);" +
+                "-fx-text-fill: white;" +
+                "-fx-background-radius: 22;" +
+                "-fx-padding: 9 20;" +
+                "-fx-font-size: 13px;" +
+                "-fx-cursor: hand;");
+        camBtn.setOnAction(e -> {
+            boolean nowOff = videoCallService.isCameraEnabled();
+            videoCallService.setCameraEnabled(!nowOff);
+            camBtn.setText(nowOff ? "📷  Cam On" : "📷  Cam Off");
+            camBtn.setStyle(!nowOff
+                    ? "-fx-background-color: rgba(230,126,34,0.9); -fx-text-fill: white; -fx-background-radius: 22; -fx-padding: 9 20; -fx-font-size: 13px; -fx-cursor: hand;"
+                    : "-fx-background-color: rgba(94,74,122,0.9); -fx-text-fill: white; -fx-background-radius: 22; -fx-padding: 9 20; -fx-font-size: 13px; -fx-cursor: hand;");
+        });
+
+        // Hang-up button
+        Button hangupBtn = new Button("✕  Hang Up");
+        hangupBtn.setStyle(
+                "-fx-background-color: rgba(231,76,60,0.9);" +
+                "-fx-text-fill: white;" +
+                "-fx-background-radius: 22;" +
+                "-fx-padding: 9 24;" +
+                "-fx-font-size: 13px;" +
+                "-fx-cursor: hand;");
+        hangupBtn.setOnAction(e -> {
             if (activeCallId != null) {
-                SocketClient.sendPersistent("VIDEO_HANGUP|" + activeCallId + "|" + normEmail(currentUserEmail) + "|" + normEmail(selectedChatUserEmail));
+                SocketClient.sendPersistent("VIDEO_HANGUP|" + activeCallId
+                        + "|" + normEmail(currentUserEmail)
+                        + "|" + normEmail(selectedChatUserEmail));
             }
             endActiveCallIfMatches(activeCallId);
             hideCallOverlay();
         });
-        VBox overlayBox = new VBox(10, new Label("Video call"), hangup);
-        overlayBox.setAlignment(Pos.TOP_CENTER);
-        overlayBox.setTranslateY(10);
-        StackPane root = new StackPane(remoteVideoView, localPane, overlayBox);
-        root.setPrefSize(760, 520);
+
+        HBox controls = new HBox(16, muteBtn, camBtn, hangupBtn);
+        controls.setAlignment(Pos.CENTER);
+        controls.setStyle(
+                "-fx-background-color: rgba(15,10,30,0.82);" +
+                "-fx-padding: 10 20 10 20;");
+        controls.setPrefHeight(54);
+        StackPane.setAlignment(controls, Pos.BOTTOM_CENTER);
+        StackPane.setMargin(controls, new Insets(0));
+
+        // ── Compose overlay ───────────────────────────────────────────────
+        StackPane root = new StackPane(remoteVideoView, localPane, controls);
+        root.setStyle("-fx-background-color: #0a0a0a;");
+        root.prefWidthProperty().bind(callOverlay.widthProperty());
+        root.prefHeightProperty().bind(callOverlay.heightProperty());
+
         callOverlay.getChildren().add(root);
         callOverlay.setVisible(true);
         startCallUiMonitor(activeCallId, null);
@@ -2417,6 +2499,7 @@ searchMessages.setOnKeyPressed(e -> {
     private void endActiveCallIfMatches(String callId) {
         if (callId == null || activeCallId == null) return;
         if (!activeCallId.equals(callId)) return;
+        stopRingtone();
         callActive = false;
         activeCallId = null;
         callUiMonitorRunning = false;
