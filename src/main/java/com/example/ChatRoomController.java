@@ -532,6 +532,15 @@ searchMessages.setOnKeyPressed(e -> {
         friendslist.setSpacing(0);
         styleTabBtn(usersTabBtn, true);
         styleTabBtn(groupsTabBtn, false);
+
+        // Auto-scroll to bottom whenever message area grows (new messages added).
+        // The listener fires after the layout pass completes, guaranteeing the
+        // ScrollPane content size is correct before we move the thumb.
+        msgbox.heightProperty().addListener((obs, oldH, newH) -> {
+            if (newH.doubleValue() > oldH.doubleValue()) {
+                chatScroll.setVvalue(1.0);
+            }
+        });
     }
     private void styleTabBtn(Button btn, boolean active) {
         if (btn == null) return;
@@ -2795,7 +2804,10 @@ searchMessages.setOnKeyPressed(e -> {
     // Utilities
     // ─────────────────────────────────────────────────────────────────────────
     private void scrollToBottom() {
-        Platform.runLater(() -> chatScroll.setVvalue(1.0));
+        // Double-deferred: first runLater queues after the current FX pulse,
+        // the nested one runs after the *next* layout pass so the ScrollPane
+        // content bounds are fully updated before we set the position.
+        Platform.runLater(() -> Platform.runLater(() -> chatScroll.setVvalue(1.0)));
     }
     private void showStatusLabel(String text, Color textColor) {
         friendslist.getChildren().clear();
