@@ -1,6 +1,5 @@
 package com.example;
 
-import com.codes.util.FileMessageCodec;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -14,7 +13,6 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.Cursor;
@@ -23,7 +21,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -88,7 +85,6 @@ public class ChatRoomController {
     @FXML private TextField msgField;
     @FXML private Button    sendMsg;
     @FXML private Button    sendImg;
-    @FXML private Button    sendFile;
     @FXML private Button    voiceToText;
     @FXML private Button    sendEmoji;
 
@@ -145,20 +141,12 @@ public class ChatRoomController {
     // ── Audio Call (1:1) ──────────────────────────────────────────────────────
     private final AudioCallService audioCallService = new AudioCallService();
     private volatile String activeCallId = null;
-    private volatile String activeCallPeerEmail = null;
     private volatile boolean callActive = false;
     private volatile int localAudioPort = -1;
     private Consumer<String> signalingListener;
     private volatile boolean audioCallingInitialized = false;
     private volatile boolean callUiMonitorRunning = false;
     private volatile Label callStatusLabel;
-    private final VideoCallService videoCallService = new VideoCallService();
-    private volatile String activeVideoId = null;
-    private volatile String activeVideoPeerEmail = null;
-    private volatile boolean videoActive = false;
-    private volatile int localVideoPort = -1;
-    private ImageView localVideoView;
-    private ImageView remoteVideoView;
 
     private static String normEmail(String email) {
         if (email == null) return null;
@@ -199,17 +187,6 @@ public class ChatRoomController {
                 localAudioPort = -1;
             }
         }, "audio-bind").start();
-
-        new Thread(() -> {
-            try {
-                localVideoPort = videoCallService.bindPort();
-                if (SocketClient.isConnected()) {
-                    SocketClient.sendPersistent("VIDEO_PORT|" + normEmail(currentUserEmail) + "|" + localVideoPort);
-                }
-            } catch (Exception e) {
-                localVideoPort = -1;
-            }
-        }, "video-bind").start();
     }
 
     /**
@@ -232,23 +209,9 @@ public class ChatRoomController {
         }
     }
 
-    private boolean ensureVideoPortReady() {
-        if (videoCallService.isPortBound() && localVideoPort > 0) return true;
-        try {
-            localVideoPort = videoCallService.bindPort();
-            if (SocketClient.isConnected()) {
-                SocketClient.sendPersistent("VIDEO_PORT|" + normEmail(currentUserEmail) + "|" + localVideoPort);
-            }
-            return localVideoPort > 0;
-        } catch (Exception e) {
-            localVideoPort = -1;
-            return false;
-        }
-    }
-
     private void onSignalingEvent(String line) {
         if (line == null || line.isBlank()) return;
-        if (!line.startsWith("CALL_") && !line.startsWith("VIDEO_")) return;
+        if (!line.startsWith("CALL_")) return;
 
         String[] parts = line.split("\\|");
         switch (parts[0]) {
@@ -260,13 +223,6 @@ public class ChatRoomController {
                     endActiveCallIfMatches(activeCallId);
                     hideCallOverlay();
                     showAlert("User is offline (or audio not registered yet).");
-                });
-            }
-            case "CALL_INVITE_BUSY" -> {
-                Platform.runLater(() -> {
-                    endActiveCallIfMatches(activeCallId);
-                    hideCallOverlay();
-                    showAlert("User is busy on another call.");
                 });
             }
             case "CALL_INVITE" -> {
@@ -315,41 +271,6 @@ public class ChatRoomController {
                     showAlert("Call ended.");
                 });
             }
-            case "VIDEO_INVITE_OFFLINE" -> Platform.runLater(() -> {
-                endActiveVideoIfMatches(activeVideoId);
-                showAlert("User is offline for video call.");
-            });
-            case "VIDEO_INVITE_BUSY" -> Platform.runLater(() -> {
-                endActiveVideoIfMatches(activeVideoId);
-                showAlert("User is busy on another video call.");
-            });
-            case "VIDEO_INVITE" -> {
-                if (parts.length < 3) return;
-                Platform.runLater(() -> showIncomingVideoCallOverlay(parts[1], parts[2]));
-            }
-            case "VIDEO_ESTABLISHED" -> {
-                if (parts.length < 4) return;
-                int peerPort;
-                try { peerPort = Integer.parseInt(parts[3]); } catch (Exception e) { return; }
-                String videoId = parts[1];
-                String peerIp = parts[2];
-                Platform.runLater(() -> startVideoWithPeer(videoId, peerIp, peerPort));
-            }
-            case "VIDEO_REJECTED" -> Platform.runLater(() -> {
-                endActiveVideoIfMatches(activeVideoId);
-                showAlert("Video call rejected.");
-            });
-            case "VIDEO_ACCEPT_NO_VIDEO_PORT" -> Platform.runLater(() -> {
-                endActiveVideoIfMatches(activeVideoId);
-                showAlert("Video is not ready on one of the devices.");
-            });
-            case "VIDEO_ENDED" -> {
-                String videoId = parts.length > 1 ? parts[1] : null;
-                Platform.runLater(() -> {
-                    endActiveVideoIfMatches(videoId);
-                    showAlert("Video call ended.");
-                });
-            }
         }
     }
 
@@ -369,32 +290,6 @@ public class ChatRoomController {
 
         styleTabBtn(usersTabBtn,  true);
         styleTabBtn(groupsTabBtn, false);
-        updateCallControlsState();
-    }
-
-    /** Keep call buttons in sync with selected chat type and call state. */
-    private void updateCallControlsState() {
-        boolean oneToOneSelected = !isGroupChatActive
-                && (selectedChatUserEmail != null || (callActive && activeCallPeerEmail != null));
-        boolean canStartAudioCall = oneToOneSelected && !callActive;
-        boolean canHangup = oneToOneSelected && callActive;
-
-        if (audiocall != null) {
-            audiocall.setDisable(!oneToOneSelected);
-            audiocall.setText(canHangup ? "✕" : "☎");
-            audiocall.setTooltip(new Tooltip(
-                    canHangup ? "End current audio call"
-                            : (canStartAudioCall ? "Start audio call" : "Audio call is available in 1:1 chat only")
-            ));
-        }
-        if (videocall != null) {
-            videocall.setDisable(!oneToOneSelected);
-            videocall.setText(videoActive ? "✕" : "📹");
-            videocall.setTooltip(new Tooltip(
-                    oneToOneSelected ? (videoActive ? "End current video call" : "Start video call")
-                            : "Video call is available in 1:1 chat only"
-            ));
-        }
     }
 
     private void styleTabBtn(Button btn, boolean active) {
@@ -707,7 +602,6 @@ public class ChatRoomController {
         hideSearchField(); // Hide search when switching chats
         clearGroupHeaderHandlers();
         showGroupProfilePanel(false);
-        updateCallControlsState();
         loadPrivateChatHistoryInitial(session);
     }
 
@@ -730,7 +624,6 @@ public class ChatRoomController {
         hideSearchField(); // Hide search when switching chats
         attachGroupHeaderHandlers();
         loadGroupHeaderFromServerAsync();
-        updateCallControlsState();
         loadGroupChatHistoryInitial(session);
     }
 
@@ -1322,8 +1215,7 @@ public class ChatRoomController {
             String ts     = parts.length > 2 ? parts[2] : "";
             boolean isMe  = sender.equals(currentUserEmail);
             String label  = isMe ? null : senderDisplayName(sender);
-            String mtype  = FileMessageCodec.isFileMessage(text) ? "file" : "text";
-            displayMessage(text, isMe, ts, mtype, label);
+            displayMessage(text, isMe, ts, "text", label);
             lastMessageTimestamp = ts;
         }
     }
@@ -1402,11 +1294,6 @@ public class ChatRoomController {
      */
     private void displayMessage(String text, boolean isMe, String timestamp, String type,
                                 String groupSenderLabel) {
-        if ("file".equals(type) && FileMessageCodec.isFileMessage(text)) {
-            displayFileMessage(text, isMe, timestamp, groupSenderLabel);
-            return;
-        }
-
         HBox container = new HBox();
         container.setPadding(new Insets(4, 12, 4, 12));
 
@@ -1444,77 +1331,6 @@ public class ChatRoomController {
         msgbox.getChildren().add(container);
 
         allMessages.add(new MessageData(text, isMe, timestamp, type, container));
-    }
-
-    private void displayFileMessage(String encoded, boolean isMe, String timestamp, String groupSenderLabel) {
-        FileMessageCodec.Parsed parsed;
-        try {
-            parsed = FileMessageCodec.decode(encoded);
-        } catch (Exception e) {
-            displayMessage("[Attachment could not be loaded]", isMe, timestamp, "text", groupSenderLabel);
-            return;
-        }
-
-        HBox container = new HBox();
-        container.setPadding(new Insets(4, 12, 4, 12));
-
-        VBox bubble = new VBox(6);
-        bubble.getStyleClass().add(isMe ? "message-bubble-sent" : "message-bubble-received");
-        bubble.setPadding(new Insets(10, 12, 10, 12));
-        bubble.setMaxWidth(400);
-
-        if (groupSenderLabel != null && !groupSenderLabel.isBlank() && !isMe) {
-            Label who = new Label(groupSenderLabel);
-            who.setFont(new Font("DM Sans", 11));
-            who.setTextFill(Color.web("#c9b8e8"));
-            bubble.getChildren().add(who);
-        }
-
-        Label clip = new Label("📎  " + parsed.filename());
-        clip.setWrapText(true);
-        clip.setFont(new Font("DM Sans", 13));
-        clip.setTextFill(Color.WHITE);
-
-        Label meta = new Label(parsed.mimeType());
-        meta.setFont(new Font("DM Sans", 10));
-        meta.setTextFill(Color.web("#bbbbbb"));
-
-        Button saveBtn = new Button("Save as…");
-        saveBtn.setStyle("-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 16; -fx-padding: 6 14; -fx-cursor: hand;");
-        saveBtn.setOnAction(ev -> {
-            Stage owner = getChatOwnerStage();
-            if (owner == null) return;
-            FileChooser fc = new FileChooser();
-            fc.setTitle("Save file");
-            fc.setInitialFileName(parsed.filename());
-            java.io.File dest = fc.showSaveDialog(owner);
-            if (dest == null) return;
-            try {
-                Files.write(dest.toPath(), parsed.data());
-            } catch (java.io.IOException ioe) {
-                showAlert("Could not save file: " + ioe.getMessage());
-            }
-        });
-
-        Label tsLabel = new Label(timestamp);
-        tsLabel.setFont(new Font("DM Sans", 10));
-        tsLabel.setTextFill(Color.web("#aaaaaa"));
-
-        bubble.getChildren().addAll(clip, meta, saveBtn, tsLabel);
-
-        if (isMe) {
-            container.setAlignment(Pos.CENTER_RIGHT);
-            bubble.setAlignment(Pos.CENTER_RIGHT);
-            tsLabel.setAlignment(Pos.CENTER_RIGHT);
-        } else {
-            container.setAlignment(Pos.CENTER_LEFT);
-            bubble.setAlignment(Pos.CENTER_LEFT);
-            tsLabel.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        container.getChildren().add(bubble);
-        msgbox.getChildren().add(container);
-        allMessages.add(new MessageData(encoded, isMe, timestamp, "file", container));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1598,12 +1414,6 @@ public class ChatRoomController {
     public void cleanup() {
         isRunning = false;
         if (messageUpdateThread != null) messageUpdateThread.interrupt();
-        callUiMonitorRunning = false;
-        if (signalingListener != null) SocketClient.removePersistentListener(signalingListener);
-        hangupCurrentCall();
-        hangupCurrentVideoCall();
-        audioCallService.stop();
-        videoCallService.stop();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1851,90 +1661,22 @@ public class ChatRoomController {
     // Other Button Handlers
     // ─────────────────────────────────────────────────────────────────────────
 
-    @FXML
-    private void onSendImageClick() {
-        pickAndSendAttachment(true);
-    }
-
-    @FXML
-    private void onSendFileClick() {
-        pickAndSendAttachment(false);
-    }
-
-    /** @param imageOnly if true, restrict chooser to common image types */
-    private void pickAndSendAttachment(boolean imageOnly) {
-        if (currentUserEmail == null) {
-            showAlert("Not logged in.");
-            return;
-        }
-        if (isGroupChatActive) {
-            if (selectedGroupId == null) {
-                showAlert("Please select a group.");
-                return;
-            }
-        } else if (selectedChatUserEmail == null) {
-            showAlert("Please select a user to chat with.");
-            return;
-        }
-
-        Stage owner = getChatOwnerStage();
-        if (owner == null) {
-            showAlert("Window not ready.");
-            return;
-        }
-
-        FileChooser ch = new FileChooser();
-        ch.setTitle(imageOnly ? "Choose image" : "Choose file");
-        if (imageOnly) {
-            ch.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp"),
-                    new FileChooser.ExtensionFilter("All files", "*.*"));
-        }
-        java.io.File f = ch.showOpenDialog(owner);
-        if (f == null) return;
-        if (!f.isFile() || !f.canRead()) {
-            showAlert("Cannot read that file.");
-            return;
-        }
-        if (f.length() > FileMessageCodec.MAX_DECODED_BYTES) {
-            showAlert("File is too large (max " + (FileMessageCodec.MAX_DECODED_BYTES / (1024 * 1024)) + " MB).");
-            return;
-        }
-
-        new Thread(() -> {
-            try {
-                byte[] data = Files.readAllBytes(f.toPath());
-                String mime = Files.probeContentType(f.toPath());
-                String payload = FileMessageCodec.encode(f.getName(), mime, data);
-                String cmd = isGroupChatActive
-                        ? "SEND_GROUP_MESSAGE|" + selectedGroupId + "|" + currentUserEmail + "|" + payload
-                        : "SEND_MESSAGE|" + currentUserEmail + "|" + selectedChatUserEmail + "|" + payload;
-                String response = SocketClient.send(cmd);
-                Platform.runLater(() -> {
-                    if (response != null && response.startsWith("MESSAGE_SENT")) {
-                        if (isGroupChatActive) pollGroupMessages();
-                        else pollPrivateMessages();
-                    } else {
-                        showAlert("Failed to send file.");
-                    }
-                });
-            } catch (Exception ex) {
-                Platform.runLater(() -> showAlert("Could not send file: " + ex.getMessage()));
-            }
-        }, "send-file").start();
-    }
+    @FXML private void onSendImageClick()            { showAlert("Image sharing coming soon!"); }
     @FXML private void onVoiceToTextClick()          { showAlert("Voice-to-text coming soon!"); }
     @FXML private void onChangeDisplayPictureClick() { showAlert("Change profile picture coming soon!"); }
 
     @FXML
     private void onAudioCallClick() {
-        if (!callActive && selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
-        if (isGroupChatActive) { showAlert("Audio calls are only available in 1-to-1 chat."); return; }
+        if (selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
         if (currentUserEmail == null) { showAlert("Not logged in."); return; }
         if (!SocketClient.isConnected()) { showAlert("Not connected to server."); return; }
 
         if (callActive && activeCallId != null) {
-            hangupCurrentCall();
+            // Hang up
+            String peer = normEmail(selectedChatUserEmail);
+            SocketClient.sendPersistent("CALL_HANGUP|" + activeCallId + "|" + normEmail(currentUserEmail) + "|" + peer);
+            endActiveCallIfMatches(activeCallId);
+            hideCallOverlay();
             return;
         }
 
@@ -1952,10 +1694,8 @@ public class ChatRoomController {
             String callId = currentUserEmail + "_" + System.currentTimeMillis();
             Platform.runLater(() -> {
                 activeCallId = callId;
-                activeCallPeerEmail = normEmail(selectedChatUserEmail);
                 callActive = true;
                 showCallingOverlay(selectedChatUserEmail);
-                updateCallControlsState();
             });
             SocketClient.sendPersistent("CALL_INVITE|" + normEmail(currentUserEmail) + "|" + normEmail(selectedChatUserEmail) + "|" + callId);
         }, "audio-call-init").start();
@@ -1963,31 +1703,8 @@ public class ChatRoomController {
 
     @FXML
     private void onVideoCallClick() {
-        if (!videoActive && selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
-        if (isGroupChatActive) { showAlert("Video calls are only available in 1-to-1 chat."); return; }
-        if (currentUserEmail == null) { showAlert("Not logged in."); return; }
-        if (!SocketClient.isConnected()) { showAlert("Not connected to server."); return; }
-
-        if (videoActive && activeVideoId != null) {
-            hangupCurrentVideoCall();
-            return;
-        }
-
-        new Thread(() -> {
-            if (!ensureVideoPortReady()) {
-                Platform.runLater(() -> showAlert("Could not initialize video. Check webcam."));
-                return;
-            }
-
-            String videoId = currentUserEmail + "_VIDEO_" + System.currentTimeMillis();
-            Platform.runLater(() -> {
-                activeVideoId = videoId;
-                activeVideoPeerEmail = normEmail(selectedChatUserEmail);
-                videoActive = true;
-                showVideoCallingOverlay(selectedChatUserEmail);
-            });
-            SocketClient.sendPersistent("VIDEO_INVITE|" + normEmail(currentUserEmail) + "|" + normEmail(selectedChatUserEmail) + "|" + videoId);
-        }, "video-call-init").start();
+        if (selectedChatUserEmail == null) { showAlert("Select a user first."); return; }
+        showAlert("Video call with " + selectedChatUserName);
     }
 
     private void showCallingOverlay(String to) {
@@ -2010,7 +1727,7 @@ public class ChatRoomController {
         Button hangup = new Button("✕  Hang up");
         hangup.getStyleClass().add("call-btn");
         hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        hangup.setOnAction(e -> hangupCurrentCall());
+        hangup.setOnAction(e -> onAudioCallClick());
 
         VBox box = new VBox(14, phoneIcon, l, status, hangup);
         box.setAlignment(Pos.CENTER);
@@ -2029,42 +1746,15 @@ public class ChatRoomController {
         }
 
         activeCallId = callId;
-        activeCallPeerEmail = normEmail(from);
         callActive = true;
-        updateCallControlsState();
 
         callOverlay.getChildren().clear();
-
-        // Caller profile preview (avatar + full name)
-        ImageView callerAvatar = new ImageView();
-        callerAvatar.setFitWidth(84);
-        callerAvatar.setFitHeight(84);
-        callerAvatar.setPreserveRatio(false);
-        callerAvatar.setClip(new Circle(42, 42, 42));
-
-        String callerName = senderDisplayName(from);
-        String callerPicBase64 = null;
-        for (String u : allUsers) {
-            String[] p = u.split(":", 4);
-            if (p.length > 0 && from.equalsIgnoreCase(p[0].trim())) {
-                String first = p.length > 1 ? p[1].trim() : "";
-                String last = p.length > 2 ? p[2].trim() : "";
-                String full = (first + " " + last).trim();
-                if (!full.isBlank()) callerName = full;
-                callerPicBase64 = p.length > 3 ? p[3].trim() : "";
-                break;
-            }
-        }
-        if (callerPicBase64 != null && !callerPicBase64.isBlank()) {
-            loadBase64Image(callerAvatar, callerPicBase64, 84);
-        } else {
-            loadProfileImage(callerAvatar, 84);
-        }
 
         // Phone icon
         Label phoneIcon = new Label("📞");
         phoneIcon.setFont(Font.font(32));
 
+        String callerName = senderDisplayName(from);
         Label l = new Label("Incoming call from " + callerName);
         l.setTextFill(Color.WHITE);
         l.setFont(Font.font("DM Sans", 18));
@@ -2088,7 +1778,6 @@ public class ChatRoomController {
                     Platform.runLater(() -> {
                         endActiveCallIfMatches(callId);
                         hideCallOverlay();
-                        updateCallControlsState();
                         showAlert("Could not initialize audio devices.");
                     });
                     return;
@@ -2104,12 +1793,11 @@ public class ChatRoomController {
             SocketClient.sendPersistent("CALL_REJECT|" + callId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from) + "|REJECTED");
             endActiveCallIfMatches(callId);
             hideCallOverlay();
-            updateCallControlsState();
         });
 
         HBox buttons = new HBox(16, accept, reject);
         buttons.setAlignment(Pos.CENTER);
-        VBox box = new VBox(14, callerAvatar, phoneIcon, l, fromLabel, status, buttons);
+        VBox box = new VBox(14, phoneIcon, l, fromLabel, status, buttons);
         box.setAlignment(Pos.CENTER);
         callOverlay.getChildren().add(box);
         callOverlay.setVisible(true);
@@ -2130,10 +1818,7 @@ public class ChatRoomController {
         ProgressIndicator spinner = new ProgressIndicator();
         spinner.setPrefSize(30, 30);
         spinner.setMaxSize(30, 30);
-        Button cancelHangup = new Button("✕  Cancel");
-        cancelHangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        cancelHangup.setOnAction(e -> hangupCurrentCall());
-        VBox box = new VBox(14, phoneIcon, l, spinner, status, cancelHangup);
+        VBox box = new VBox(14, phoneIcon, l, spinner, status);
         box.setAlignment(Pos.CENTER);
         callOverlay.getChildren().add(box);
         callOverlay.setVisible(true);
@@ -2201,7 +1886,7 @@ public class ChatRoomController {
             // Hang up button
             Button hangup = new Button("✕  Hang up");
             hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-            hangup.setOnAction(e -> hangupCurrentCall());
+            hangup.setOnAction(e -> onAudioCallClick());
 
             HBox controls = new HBox(16, muteBtn, hangup);
             controls.setAlignment(Pos.CENTER);
@@ -2223,348 +1908,13 @@ public class ChatRoomController {
         }
     }
 
-    private void showIncomingVideoCallOverlay(String videoId, String from) {
-        if (videoActive) {
-            SocketClient.sendPersistent("VIDEO_REJECT|" + videoId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from) + "|BUSY");
-            return;
-        }
-        activeVideoId = videoId;
-        activeVideoPeerEmail = normEmail(from);
-        videoActive = true;
-        if (callOverlay == null) return;
-        callOverlay.getChildren().clear();
-
-        Label camIcon = new Label("📹");
-        camIcon.setFont(Font.font(32));
-        Label title = new Label("Incoming video call");
-        title.setTextFill(Color.WHITE);
-        title.setFont(Font.font("DM Sans", 20));
-        Label who = new Label("From: " + senderDisplayName(from));
-        who.setTextFill(Color.web("#f3f4d2"));
-        who.setFont(Font.font("DM Sans", 16));
-        Label fromLabel = new Label(from);
-        fromLabel.setTextFill(Color.web("#a0b9a5"));
-        String selfName = currentUserName != null ? currentUserName : (currentUserEmail != null ? normEmail(currentUserEmail) : "You");
-        Label youLine = new Label("You: " + selfName);
-        youLine.setTextFill(Color.web("#d8dee9"));
-        youLine.setFont(Font.font("DM Sans", 13));
-
-        Button accept = new Button("✓  Accept");
-        accept.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        accept.setOnAction(e -> {
-            showVideoConnectingOverlay();
-            new Thread(() -> {
-                if (!ensureVideoPortReady()) {
-                    Platform.runLater(() -> {
-                        endActiveVideoIfMatches(videoId);
-                        hideCallOverlay();
-                        showAlert("Could not initialize video.");
-                    });
-                    return;
-                }
-                SocketClient.sendPersistent("VIDEO_ACCEPT|" + videoId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from));
-            }, "video-accept-bind").start();
-        });
-
-        Button reject = new Button("✕  Reject");
-        reject.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        reject.setOnAction(e -> {
-            SocketClient.sendPersistent("VIDEO_REJECT|" + videoId + "|" + normEmail(currentUserEmail) + "|" + normEmail(from) + "|REJECTED");
-            endActiveVideoIfMatches(videoId);
-            hideCallOverlay();
-        });
-
-        HBox actions = new HBox(16, accept, reject);
-        actions.setAlignment(Pos.CENTER);
-        VBox box = new VBox(14, camIcon, title, who, fromLabel, youLine, actions);
-        box.setAlignment(Pos.CENTER);
-        callOverlay.getChildren().add(box);
-        callOverlay.setVisible(true);
-    }
-
-    private void startVideoWithPeer(String videoId, String peerIp, int peerPort) {
-        if (activeVideoId == null || !activeVideoId.equals(videoId)) return;
-        showVideoInCallOverlay();
-        try {
-            videoCallService.start(InetAddress.getByName(peerIp), peerPort,
-                    img -> Platform.runLater(() -> { if (localVideoView != null) localVideoView.setImage(img); }),
-                    img -> Platform.runLater(() -> { if (remoteVideoView != null) remoteVideoView.setImage(img); }));
-        } catch (Exception e) {
-            endActiveVideoIfMatches(videoId);
-            showAlert("Could not start video call.");
-        }
-    }
-
-    private void showVideoCallingOverlay(String to) {
-        if (callOverlay == null) return;
-        callOverlay.getChildren().clear();
-
-        String peerDisplay = senderDisplayName(to);
-        String selfDisplay = currentUserName != null && !currentUserName.isBlank()
-                ? currentUserName
-                : (currentUserEmail != null ? normEmail(currentUserEmail) : "You");
-
-        StackPane remoteWrap = new StackPane();
-        remoteWrap.setPrefSize(640, 400);
-        remoteWrap.setStyle("-fx-background-color: black;");
-        VBox ringCol = new VBox(8);
-        ringCol.setAlignment(Pos.CENTER);
-        Label camIcon = new Label("📹");
-        camIcon.setFont(Font.font(32));
-        Label title = new Label("Calling " + peerDisplay + "…");
-        title.setTextFill(Color.WHITE);
-        title.setFont(Font.font("DM Sans", 18));
-        Label status = new Label("Ringing…");
-        status.setTextFill(Color.web("#d8dee9"));
-        ringCol.getChildren().addAll(camIcon, title, status);
-        remoteWrap.getChildren().add(ringCol);
-
-        Label remoteHint = new Label("Remote · " + peerDisplay);
-        remoteHint.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-text-fill: white; -fx-padding: 6 12; -fx-font-size: 12;");
-        StackPane.setAlignment(remoteHint, Pos.TOP_LEFT);
-        StackPane.setMargin(remoteHint, new Insets(10, 12, 0, 0));
-        remoteWrap.getChildren().add(remoteHint);
-
-        localVideoView = new ImageView();
-        localVideoView.setFitWidth(176);
-        localVideoView.setFitHeight(120);
-        localVideoView.setPreserveRatio(true);
-        Label localTag = new Label("You · " + selfDisplay);
-        localTag.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-text-fill: #f3f4d2; -fx-padding: 4 10; -fx-font-size: 12;");
-        StackPane localPipStack = new StackPane(localVideoView, localTag);
-        StackPane.setAlignment(localTag, Pos.TOP_LEFT);
-        StackPane localPipOuter = new StackPane(localPipStack);
-        localPipOuter.setPrefSize(176, 120);
-        localPipOuter.setMaxSize(176, 120);
-        localPipOuter.setStyle("-fx-background-color: #111; -fx-border-color: #444; -fx-border-width: 2;");
-        StackPane.setAlignment(localPipOuter, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(localPipOuter, new Insets(0, 16, 72, 0));
-
-        Button camBtn = new Button(videoCallService.isCameraEnabled() ? "📷  Camera off" : "📹  Camera on");
-        camBtn.setStyle("-fx-background-color: #34495e; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;");
-        camBtn.setOnAction(e -> {
-            boolean on = !videoCallService.isCameraEnabled();
-            videoCallService.setCameraEnabled(on);
-            camBtn.setText(on ? "📷  Camera off" : "📹  Camera on");
-        });
-        Button hangup = new Button("✕  Cancel");
-        hangup.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 24; -fx-font-size: 14; -fx-cursor: hand;");
-        hangup.setOnAction(e -> hangupCurrentVideoCall());
-        HBox ringControls = new HBox(12, camBtn, hangup);
-        ringControls.setAlignment(Pos.CENTER);
-        StackPane.setAlignment(ringControls, Pos.BOTTOM_CENTER);
-        StackPane.setMargin(ringControls, new Insets(0, 0, 12, 0));
-
-        StackPane rootPane = new StackPane(remoteWrap, localPipOuter, ringControls);
-        callOverlay.getChildren().add(rootPane);
-        callOverlay.setVisible(true);
-
-        new Thread(() -> {
-            try {
-                videoCallService.startLocalPreview(img -> Platform.runLater(() -> {
-                    if (localVideoView != null) localVideoView.setImage(img);
-                }));
-            } catch (Exception e) {
-                Platform.runLater(() -> showAlert("Could not initialize camera."));
-            }
-        }, "video-ring-preview").start();
-    }
-
-    private void showVideoConnectingOverlay() {
-        if (callOverlay == null) return;
-        callOverlay.getChildren().clear();
-
-        String selfDisplay = currentUserName != null && !currentUserName.isBlank()
-                ? currentUserName
-                : (currentUserEmail != null ? normEmail(currentUserEmail) : "You");
-
-        StackPane remoteWrap = new StackPane();
-        remoteWrap.setPrefSize(640, 400);
-        remoteWrap.setStyle("-fx-background-color: black;");
-        VBox centerCol = new VBox(10);
-        centerCol.setAlignment(Pos.CENTER);
-        Label camIcon = new Label("📹");
-        camIcon.setFont(Font.font(32));
-        Label title = new Label("Connecting video…");
-        title.setTextFill(Color.WHITE);
-        title.setFont(Font.font("DM Sans", 18));
-        ProgressIndicator pi = new ProgressIndicator();
-        pi.setPrefSize(30, 30);
-        centerCol.getChildren().addAll(camIcon, title, pi);
-        remoteWrap.getChildren().add(centerCol);
-
-        localVideoView = new ImageView();
-        localVideoView.setFitWidth(176);
-        localVideoView.setFitHeight(120);
-        localVideoView.setPreserveRatio(true);
-        Label localTag = new Label("You · " + selfDisplay);
-        localTag.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-text-fill: #f3f4d2; -fx-padding: 4 10; -fx-font-size: 12;");
-        StackPane localPipStack = new StackPane(localVideoView, localTag);
-        StackPane.setAlignment(localTag, Pos.TOP_LEFT);
-        StackPane localPipOuter = new StackPane(localPipStack);
-        localPipOuter.setPrefSize(176, 120);
-        localPipOuter.setMaxSize(176, 120);
-        localPipOuter.setStyle("-fx-background-color: #111; -fx-border-color: #444; -fx-border-width: 2;");
-        StackPane.setAlignment(localPipOuter, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(localPipOuter, new Insets(0, 16, 72, 0));
-
-        Button camBtn = new Button(videoCallService.isCameraEnabled() ? "📷  Camera off" : "📹  Camera on");
-        camBtn.setStyle("-fx-background-color: #34495e; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;");
-        camBtn.setOnAction(e -> {
-            boolean on = !videoCallService.isCameraEnabled();
-            videoCallService.setCameraEnabled(on);
-            camBtn.setText(on ? "📷  Camera off" : "📹  Camera on");
-        });
-        Button endBtn = new Button("✕  Cancel");
-        endBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-size: 14;");
-        endBtn.setOnAction(e -> hangupCurrentVideoCall());
-        HBox connectControls = new HBox(12, camBtn, endBtn);
-        connectControls.setAlignment(Pos.CENTER);
-        StackPane.setAlignment(connectControls, Pos.BOTTOM_CENTER);
-        StackPane.setMargin(connectControls, new Insets(0, 0, 12, 0));
-
-        StackPane rootPane = new StackPane(remoteWrap, localPipOuter, connectControls);
-        callOverlay.getChildren().add(rootPane);
-        callOverlay.setVisible(true);
-
-        new Thread(() -> {
-            try {
-                videoCallService.startLocalPreview(img -> Platform.runLater(() -> {
-                    if (localVideoView != null) localVideoView.setImage(img);
-                }));
-            } catch (Exception e) {
-                Platform.runLater(() -> showAlert("Could not initialize camera."));
-            }
-        }, "video-connect-preview").start();
-    }
-
-    private void showVideoInCallOverlay() {
-        if (callOverlay == null) return;
-        callOverlay.getChildren().clear();
-
-        String peerDisplay = activeVideoPeerEmail != null ? senderDisplayName(activeVideoPeerEmail) : "Contact";
-        String selfDisplay = currentUserName != null && !currentUserName.isBlank()
-                ? currentUserName
-                : (currentUserEmail != null ? normEmail(currentUserEmail) : "You");
-
-        remoteVideoView = new ImageView();
-        remoteVideoView.setFitWidth(640);
-        remoteVideoView.setFitHeight(400);
-        remoteVideoView.setPreserveRatio(true);
-
-        localVideoView = new ImageView();
-        localVideoView.setFitWidth(176);
-        localVideoView.setFitHeight(120);
-        localVideoView.setPreserveRatio(true);
-
-        Label remoteTag = new Label("Remote · " + peerDisplay);
-        remoteTag.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-text-fill: white; -fx-padding: 6 12; -fx-font-size: 13;");
-        StackPane remoteWrap = new StackPane(remoteVideoView, remoteTag);
-        remoteWrap.setPrefSize(640, 400);
-        remoteWrap.setStyle("-fx-background-color: black;");
-        StackPane.setAlignment(remoteTag, Pos.TOP_LEFT);
-        StackPane.setMargin(remoteTag, new Insets(10, 12, 0, 0));
-
-        Label localTag = new Label("You · " + selfDisplay);
-        localTag.setStyle("-fx-background-color: rgba(0,0,0,0.55); -fx-text-fill: #f3f4d2; -fx-padding: 4 10; -fx-font-size: 12;");
-        StackPane localPipStack = new StackPane(localVideoView, localTag);
-        StackPane.setAlignment(localTag, Pos.TOP_LEFT);
-
-        StackPane localPipOuter = new StackPane(localPipStack);
-        localPipOuter.setPrefSize(176, 120);
-        localPipOuter.setMaxSize(176, 120);
-        localPipOuter.setStyle("-fx-background-color: #111; -fx-border-color: #444; -fx-border-width: 2;");
-        StackPane.setAlignment(localPipOuter, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(localPipOuter, new Insets(0, 16, 72, 0));
-
-        Button muteBtn = new Button("🎤  Mute");
-        muteBtn.setStyle("-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;");
-        muteBtn.setOnAction(e -> {
-            boolean nowMuted = !videoCallService.isMicMuted();
-            videoCallService.setMicMuted(nowMuted);
-            muteBtn.setText(nowMuted ? "🔇  Unmute" : "🎤  Mute");
-            muteBtn.setStyle(nowMuted
-                    ? "-fx-background-color: #e67e22; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;"
-                    : "-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;");
-        });
-
-        Button cameraBtn = new Button(videoCallService.isCameraEnabled() ? "📷  Camera off" : "📹  Camera on");
-        cameraBtn.setStyle("-fx-background-color: #34495e; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-size: 13; -fx-cursor: hand;");
-        cameraBtn.setOnAction(e -> {
-            boolean on = !videoCallService.isCameraEnabled();
-            videoCallService.setCameraEnabled(on);
-            cameraBtn.setText(on ? "📷  Camera off" : "📹  Camera on");
-        });
-
-        Button endBtn = new Button("✕  Hang up");
-        endBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-size: 14; -fx-cursor: hand;");
-        endBtn.setOnAction(e -> hangupCurrentVideoCall());
-
-        HBox videoControls = new HBox(12, muteBtn, cameraBtn, endBtn);
-        videoControls.setAlignment(Pos.CENTER);
-        StackPane.setAlignment(videoControls, Pos.BOTTOM_CENTER);
-        StackPane.setMargin(videoControls, new Insets(0, 0, 12, 0));
-
-        StackPane rootPane = new StackPane(remoteWrap, localPipOuter, videoControls);
-        callOverlay.getChildren().add(rootPane);
-        callOverlay.setVisible(true);
-    }
-
-    private void hangupCurrentVideoCall() {
-        if (!videoActive || activeVideoId == null) return;
-        if (currentUserEmail != null && SocketClient.isConnected() && activeVideoPeerEmail != null) {
-            SocketClient.sendPersistent("VIDEO_HANGUP|" + activeVideoId + "|"
-                    + normEmail(currentUserEmail) + "|" + normEmail(activeVideoPeerEmail));
-        }
-        endActiveVideoIfMatches(activeVideoId);
-    }
-
-    private void endActiveVideoIfMatches(String videoId) {
-        if (videoId == null || activeVideoId == null) return;
-        if (!activeVideoId.equals(videoId)) return;
-        videoActive = false;
-        activeVideoId = null;
-        activeVideoPeerEmail = null;
-        videoCallService.stop();
-        localVideoView = null;
-        remoteVideoView = null;
-        hideCallOverlay();
-        updateCallControlsState();
-
-        if (currentUserEmail != null) {
-            new Thread(() -> {
-                try {
-                    localVideoPort = videoCallService.bindPort();
-                    if (SocketClient.isConnected()) {
-                        SocketClient.sendPersistent("VIDEO_PORT|" + normEmail(currentUserEmail) + "|" + localVideoPort);
-                    }
-                } catch (Exception ignored) {
-                    localVideoPort = -1;
-                }
-            }, "video-rebind").start();
-        }
-    }
-
-    private void hangupCurrentCall() {
-        if (!callActive || activeCallId == null) return;
-        if (currentUserEmail != null && SocketClient.isConnected() && activeCallPeerEmail != null) {
-            SocketClient.sendPersistent("CALL_HANGUP|" + activeCallId + "|"
-                    + normEmail(currentUserEmail) + "|" + normEmail(activeCallPeerEmail));
-        }
-        endActiveCallIfMatches(activeCallId);
-        hideCallOverlay();
-        updateCallControlsState();
-    }
-
     private void endActiveCallIfMatches(String callId) {
         if (callId == null || activeCallId == null) return;
         if (!activeCallId.equals(callId)) return;
         callActive = false;
         activeCallId = null;
-        activeCallPeerEmail = null;
         callUiMonitorRunning = false;
         audioCallService.stop();
-        updateCallControlsState();
 
         // Re-bind UDP port only (no mic/speaker) for next call
         if (currentUserEmail != null) {
@@ -2691,7 +2041,6 @@ public class ChatRoomController {
 
     private void showSearchField() {
         if (searchMessages != null) {
-            searchMessages.setManaged(true);
             searchMessages.setVisible(true);
             searchMessages.requestFocus();
             searchMessages.textProperty().addListener((obs, oldText, newText) -> performSearch(newText));
@@ -2701,7 +2050,6 @@ public class ChatRoomController {
     private void hideSearchField() {
         if (searchMessages != null) {
             searchMessages.setVisible(false);
-            searchMessages.setManaged(false);
             searchMessages.clear();
             clearSearchHighlights();
         }
