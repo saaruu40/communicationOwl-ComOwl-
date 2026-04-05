@@ -10,6 +10,8 @@ module com.example {
     requires org.xerial.sqlitejdbc;
     requires webcam.capture;
     requires javafx.media;
+    requires google.genai;
+    requires java.net.http;
 
     opens com.example to javafx.fxml;
     exports com.example;

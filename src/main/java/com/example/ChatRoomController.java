@@ -157,6 +157,8 @@ public class ChatRoomController {
     private volatile int chatSessionId = 0;
     private Thread messageUpdateThread;
     private volatile boolean isRunning = true;
+    // ── Gemini AI Service ──────────────────────────────────────────────────────
+    private GeminiChatService geminiChatService;
     // ── Audio / Video Call (1:1) ─────────────────────────────────────────────────
     private final AudioCallService audioCallService = new AudioCallService();
     private final VideoCallService videoCallService = new VideoCallService();
@@ -193,6 +195,7 @@ public class ChatRoomController {
         initializeEmojiPicker();
         initializeCallSignaling();
         startMessageUpdateThread();
+        initializeGeminiService();
    
    
         searchMessages.textProperty().addListener((obs, oldVal, newVal) -> performSearch(newVal));
@@ -494,6 +497,7 @@ searchMessages.setOnKeyPressed(e -> {
                 if (Objects.equals(normEmail(senderEmail), normEmail(selectedChatUserEmail))) {
                     // if currently chatting with sender, mark as read
                     unreadMessageCount.remove(senderEmail);
+                    lastMessageTimestamp = null;
                     pollPrivateMessages();
                 }
             }
@@ -1402,7 +1406,7 @@ searchMessages.setOnKeyPressed(e -> {
                 if (session != chatSessionId || !Objects.equals(peer, selectedChatUserEmail) || isGroupChatActive)
                     return;
                 if (response == null || "CONNECTION_ERROR".equals(response) || response.isBlank()) return;
-                applyPrivateHistoryFromResponse(response, false);
+                applyPrivateHistoryFromResponse(response, since == null);
                 scrollToBottom();
             });
         }).start();
@@ -1472,7 +1476,7 @@ searchMessages.setOnKeyPressed(e -> {
                 if (response == null || "CONNECTION_ERROR".equals(response)
                         || response.isBlank() || "EMPTY".equals(response)) return;
                 if ("NOT_MEMBER".equals(response)) return;
-                applyGroupHistoryFromResponse(response, false);
+                applyGroupHistoryFromResponse(response, since == null);
                 scrollToBottom();
             });
         }).start();
@@ -1573,11 +1577,9 @@ searchMessages.setOnKeyPressed(e -> {
         Label msgLabel = new Label(text);
         msgLabel.setWrapText(true);
         msgLabel.setMaxWidth(380);
-        msgLabel.setFont(new Font("DM Sans", 13));
         msgLabel.getStyleClass().add(isMe ? "message-bubble-sent" : "message-bubble-received");
         Label tsLabel = new Label(timestamp);
-        tsLabel.setFont(new Font("DM Sans", 10));
-        tsLabel.setTextFill(Color.web("#aaaaaa"));
+        tsLabel.getStyleClass().add(isMe ? "message-timestamp-sent" : "message-timestamp-received");
         if (isMe) {
             container.setAlignment(Pos.CENTER_RIGHT);
             bubble.setAlignment(Pos.CENTER_RIGHT);
@@ -1589,8 +1591,7 @@ searchMessages.setOnKeyPressed(e -> {
         }
         if (groupSenderLabel != null && !groupSenderLabel.isBlank() && !isMe) {
             Label who = new Label(groupSenderLabel);
-            who.setFont(new Font("DM Sans", 11));
-            who.setTextFill(Color.web("#c9b8e8"));
+            who.getStyleClass().add("group-sender-name");
             bubble.getChildren().addAll(who, msgLabel, tsLabel);
         } else {
             bubble.getChildren().addAll(msgLabel, tsLabel);
@@ -1615,19 +1616,16 @@ searchMessages.setOnKeyPressed(e -> {
         bubble.setMaxWidth(400);
         if (groupSenderLabel != null && !groupSenderLabel.isBlank() && !isMe) {
             Label who = new Label(groupSenderLabel);
-            who.setFont(new Font("DM Sans", 11));
-            who.setTextFill(Color.web("#c9b8e8"));
+            who.getStyleClass().add("group-sender-name");
             bubble.getChildren().add(who);
         }
         Label clip = new Label("📎 " + parsed.filename());
         clip.setWrapText(true);
-        clip.setFont(new Font("DM Sans", 13));
-        clip.setTextFill(Color.WHITE);
+        clip.getStyleClass().add("file-clip-label");
         Label meta = new Label(parsed.mimeType());
-        meta.setFont(new Font("DM Sans", 10));
-        meta.setTextFill(Color.web("#bbbbbb"));
+        meta.getStyleClass().add("file-meta-label");
         Button saveBtn = new Button("Save as…");
-        saveBtn.setStyle("-fx-background-color: #5e4a7a; -fx-text-fill: white; -fx-background-radius: 16; -fx-padding: 6 14; -fx-cursor: hand;");
+        saveBtn.getStyleClass().add("file-save-btn");
         saveBtn.setOnAction(ev -> {
             Stage owner = getChatOwnerStage();
             if (owner == null) return;
@@ -1643,8 +1641,7 @@ searchMessages.setOnKeyPressed(e -> {
             }
         });
         Label tsLabel = new Label(timestamp);
-        tsLabel.setFont(new Font("DM Sans", 10));
-        tsLabel.setTextFill(Color.web("#aaaaaa"));
+        tsLabel.getStyleClass().add(isMe ? "message-timestamp-sent" : "message-timestamp-received");
         bubble.getChildren().addAll(clip, meta, saveBtn, tsLabel);
         if (isMe) {
             container.setAlignment(Pos.CENTER_RIGHT);
@@ -1683,6 +1680,7 @@ searchMessages.setOnKeyPressed(e -> {
                         moveConversationToTop(selectedChatUserEmail);
                         loadNotificationBadge();
                     }
+                    lastMessageTimestamp = null;
                     pollPrivateMessages();
                 } else {
                     showAlert("Failed to send message. Please try again.");
@@ -1698,6 +1696,7 @@ searchMessages.setOnKeyPressed(e -> {
             String response = SocketClient.send(cmd);
             Platform.runLater(() -> {
                 if (response != null && response.startsWith("MESSAGE_SENT")) {
+                    lastMessageTimestamp = null;
                     pollGroupMessages();
                 } else {
                     showAlert("Failed to send group message. You may not be a member of this group.");
@@ -1778,21 +1777,58 @@ searchMessages.setOnKeyPressed(e -> {
     // ─────────────────────────────────────────────────────────────────────────
     // AI / Gemini Panel
     // ─────────────────────────────────────────────────────────────────────────
+    private void initializeGeminiService() {
+        try {
+            geminiChatService = new GeminiChatService();
+            System.out.println("[Gemini] Service initialized successfully.");
+        } catch (IllegalStateException e) {
+            System.err.println("[Gemini] " + e.getMessage());
+            geminiChatService = null;
+        }
+    }
     @FXML
     private void onGeminiSendClick() {
         String question = geminimsg.getText().trim();
         if (question.isEmpty()) return;
+        if (geminiChatService == null) {
+            appendGeminiMessage("⚠ AI service unavailable. Set the GEMINI_API_KEY environment variable and restart.", "#8b3a3a");
+            return;
+        }
+        if (currentUserEmail == null) {
+            appendGeminiMessage("⚠ Please log in first.", "#8b3a3a");
+            return;
+        }
         appendGeminiMessage("You: " + question, "#4a7c59");
         geminimsg.clear();
+        geminisend.setDisable(true);
+        // Show a typing indicator
+        Label typingLabel = new Label("✦ AI is thinking...");
+        typingLabel.setWrapText(true);
+        typingLabel.setMaxWidth(300);
+        typingLabel.setFont(new Font("DM Sans", 12));
+        typingLabel.setStyle("-fx-padding: 6; -fx-background-radius: 10; " +
+                "-fx-background-color: #3d2e5e; -fx-text-fill: #c9b8e8; -fx-font-style: italic;");
+        VBox.setMargin(typingLabel, new Insets(4, 8, 4, 8));
+        geminibox.getChildren().add(typingLabel);
+        if (geminiscrollpane != null) geminiscrollpane.setVvalue(1.0);
+        final String userEmail = currentUserEmail;
         new Thread(() -> {
-            String response = SocketClient.send("ASK_AI|" + question);
-            String answer = (response != null && !response.equals("CONNECTION_ERROR"))
-                    ? response : "Sorry, I could not reach the AI service.";
+            String answer = geminiChatService.ask(userEmail, question);
             Platform.runLater(() -> {
+                geminibox.getChildren().remove(typingLabel);
                 appendGeminiMessage("AI: " + answer, "#5e4a7a");
                 if (geminiscrollpane != null) geminiscrollpane.setVvalue(1.0);
+                geminisend.setDisable(false);
             });
-        }).start();
+        }, "gemini-ask").start();
+    }
+    @FXML
+    private void onGeminiClearClick() {
+        if (geminiChatService != null && currentUserEmail != null) {
+            geminiChatService.clearHistory(currentUserEmail);
+        }
+        geminibox.getChildren().clear();
+        appendGeminiMessage("✦ Conversation cleared. Ask me anything!", "#3d2e5e");
     }
     private void appendGeminiMessage(String text, String bg) {
         Label lbl = new Label(text);

@@ -231,6 +231,10 @@
                         <HBox alignment="CENTER_LEFT" layoutX="0" layoutY="0" prefHeight="56" prefWidth="280" spacing="10" style="-fx-background-color: #1c1436;                                      -fx-border-color: rgba(123,44,255,0.2);                                      -fx-border-width: 0 0 1 0;                                      -fx-padding: 0 14 0 16;">
                             <Label style="-fx-text-fill: #9b30ff; -fx-font-size: 18px;" text="✦" />
                             <Label style="-fx-text-fill: #f0eaff;                                           -fx-font-size: 15px;                                           -fx-font-family: 'DM Sans';                                           -fx-font-weight: bold;" text="AI Assistant" HBox.hgrow="ALWAYS" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Button mnemonicParsing="false" onAction="#onGeminiClearClick" prefHeight="28" prefWidth="60" style="-fx-background-color: rgba(123,44,255,0.25);                                            -fx-background-radius: 14;                                            -fx-border-color: rgba(123,44,255,0.4);                                            -fx-border-radius: 14;                                            -fx-border-width: 1;                                            -fx-text-fill: #c4b0ff;                                            -fx-font-size: 11px;                                            -fx-font-family: 'DM Sans';" text="Clear">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
                         </HBox>
 
                         <ScrollPane fx:id="geminiscrollpane" fitToWidth="true" hbarPolicy="NEVER" layoutY="56" prefHeight="552" prefWidth="280" style="-fx-background-color: transparent;                                            -fx-background: transparent;                                            -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
