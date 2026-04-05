@@ -24,7 +24,8 @@
     -fx-font-weight: 500;
 }
 
-.icon-button, .profile-button {
+.icon-button,
+.profile-button {
     -fx-cursor: hand;
     -fx-background-color: transparent;
 }
@@ -34,7 +35,8 @@
     -fx-text-fill: #bcaeff;
 }
 
-.icon:hover, .profile-button:hover {
+.icon:hover,
+.profile-button:hover {
     -fx-opacity: 0.8;
 }
 
@@ -241,13 +243,15 @@
     -fx-font-size: 11px;
 }
 
-.call-icon, .info-icon {
+.call-icon,
+.info-icon {
     -fx-text-fill: #bcaeff;
     -fx-font-size: 20px;
     -fx-cursor: hand;
 }
 
-.call-icon:hover, .info-icon:hover {
+.call-icon:hover,
+.info-icon:hover {
     -fx-text-fill: #9b4dff;
 }
 
@@ -286,7 +290,8 @@
     -fx-max-width: 400px;
 }
 
-.message-time-sent, .message-time-received {
+.message-time-sent,
+.message-time-received {
     -fx-text-fill: #6c5a8e;
     -fx-font-size: 10px;
     -fx-padding: 2px 0 0 0;

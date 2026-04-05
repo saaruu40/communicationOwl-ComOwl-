@@ -607,3 +607,69 @@
     -fx-font-family: "DM Sans", sans-serif;
     -fx-font-size: 13px;
 }
+
+/* ── Voice Messages ───────────────────────────────── */
+.voice-message-bubble {
+    -fx-min-width: 180px;
+    -fx-spacing: 12px;
+}
+
+.voice-play-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
+    -fx-background-radius: 15;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+}
+
+.voice-play-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-effect: dropshadow(gaussian, white, 5, 0, 0, 0);
+}
+
+.recording-active {
+    -fx-background-color: #ff4d4f;
+    -fx-background-radius: 19;
+    -fx-effect: dropshadow(gaussian, #ff4c4c, 12, 0.6, 0, 0);
+}
+
+.recording-overlay {
+    -fx-background-color: rgba(22, 16, 43, 0.95);
+    -fx-background-radius: 20;
+    -fx-padding: 0 15 0 15;
+    -fx-border-color: #ff4d4f;
+    -fx-border-width: 1;
+    -fx-border-radius: 20;
+}
+
+.recording-dot {
+    -fx-fill: #ff4d4f;
+}
+
+.recording-text {
+    -fx-text-fill: #ff4d4f;
+    -fx-font-weight: bold;
+}
+
+.recording-timer {
+    -fx-text-fill: white;
+    -fx-font-family: "DM Sans", sans-serif;
+}
+
+.voice-progress-bar {
+    -fx-pref-height: 4;
+    -fx-min-height: 4;
+    -fx-max-height: 4;
+}
+
+.voice-progress-bar .track {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-background-radius: 2;
+}
+
+.voice-progress-bar .bar {
+    -fx-background-color: #bcaeff;
+    -fx-background-radius: 2;
+}

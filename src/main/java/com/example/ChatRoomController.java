@@ -2,6 +2,9 @@ package com.example;
 import com.codes.util.FileMessageCodec;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.scene.layout.Priority;
+import javax.sound.sampled.*;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.util.Duration;
@@ -111,7 +114,12 @@ public class ChatRoomController {
     @FXML private TextField msgField;
     @FXML private Button sendMsg;
     @FXML private Button sendFile;
-    @FXML private Button voiceToText;
+    @FXML private Button voiceMsgBtn;
+    @FXML private HBox recordingOverlay;
+    @FXML private Label recordingTimeLabel;
+    @FXML private Circle recordingDot;
+    private javafx.animation.Timeline recordingTimeline;
+    private long recordingSeconds = 0;
     @FXML private Button sendEmoji;
     // ── Header Buttons ────────────────────────────────────────────────────────
     @FXML private HBox headerButtonsBox;
@@ -171,6 +179,16 @@ public class ChatRoomController {
     private volatile Label callStatusLabel;
     private Consumer<String> signalingListener;
     private volatile boolean callSignalingInitialized = false;
+    private final VoiceRecordService voiceRecordService = new VoiceRecordService();
+
+
+    // ── Call Log System Tracking ─────────────────────────────────────────────
+    private volatile boolean clIsCaller = false;
+    private volatile String clCurrentCallPeer = null;
+    private volatile String clCurrentCallType = null;
+    private volatile long clCurrentCallStartTime = 0;
+    private volatile String clCurrentCallStatusOverride = null;
+
     private static String normEmail(String email) {
         if (email == null) return null;
         return email.trim().toLowerCase();
@@ -384,6 +402,7 @@ searchMessages.setOnKeyPressed(e -> {
                 Platform.runLater(() -> showIncomingCallOverlay(callId, from, callerName, false));
             }
             case "CALL_ESTABLISHED" -> {
+                clCurrentCallStartTime = System.currentTimeMillis();
                 if (parts.length < 4) return;
                 String callId = parts[1];
                 String peerIp = parts[2];
@@ -393,6 +412,7 @@ searchMessages.setOnKeyPressed(e -> {
                 new Thread(() -> startAudioWithPeer(callId, peerIp, peerPort), "call-established-handler").start();
             }
             case "CALL_REJECTED" -> {
+                clCurrentCallStatusOverride = "Rejected";
                 String callId = parts.length > 1 ? parts[1] : null;
                 String reason = parts.length > 3 ? parts[3] : "REJECTED";
                 Platform.runLater(() -> {
@@ -437,6 +457,7 @@ searchMessages.setOnKeyPressed(e -> {
                 Platform.runLater(() -> showIncomingCallOverlay(videoId, from, callerName, true));
             }
             case "VIDEO_ESTABLISHED" -> {
+                clCurrentCallStartTime = System.currentTimeMillis();
                 if (parts.length < 4) return;
                 String videoId = parts[1];
                 String peerIp = parts[2];
@@ -445,6 +466,7 @@ searchMessages.setOnKeyPressed(e -> {
                 new Thread(() -> startVideoWithPeer(videoId, peerIp, peerPort), "video-established-handler").start();
             }
             case "VIDEO_REJECTED" -> {
+                clCurrentCallStatusOverride = "Rejected";
                 String videoId = parts.length > 1 ? parts[1] : null;
                 String reason = parts.length > 3 ? parts[3] : "REJECTED";
                 Platform.runLater(() -> {
@@ -1567,7 +1589,14 @@ searchMessages.setOnKeyPressed(e -> {
      */
     private void displayMessage(String text, boolean isMe, String timestamp, String type,
                                 String groupSenderLabel) {
-        if ("file".equals(type) && FileMessageCodec.isFileMessage(text)) {
+        if (FileMessageCodec.isFileMessage(text)) {
+            try {
+                FileMessageCodec.Parsed parsed = FileMessageCodec.decode(text);
+                if (parsed.mimeType().startsWith("audio/")) {
+                    displayVoiceMessage(parsed, isMe, timestamp, groupSenderLabel);
+                    return;
+                }
+            } catch (Exception ignored) {}
             displayFileMessage(text, isMe, timestamp, groupSenderLabel);
             return;
         }
@@ -1600,6 +1629,124 @@ searchMessages.setOnKeyPressed(e -> {
         msgbox.getChildren().add(container);
         allMessages.add(new MessageData(text, isMe, timestamp, type, container));
     }
+
+    private void displayVoiceMessage(FileMessageCodec.Parsed parsed, boolean isMe, String timestamp, String groupSenderLabel) {
+        HBox container = new HBox();
+        container.getStyleClass().add("message-row");
+        container.setPadding(new Insets(4, 12, 4, 12));
+        container.setPrefWidth(700);
+        container.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+
+        VBox bubble = new VBox(4);
+        bubble.setPadding(new Insets(10, 14, 10, 14));
+        bubble.setMinWidth(220);
+        bubble.setMaxWidth(350);
+        bubble.getStyleClass().add(isMe ? "message-bubble-sent" : "message-bubble-received");
+
+        if (groupSenderLabel != null && !groupSenderLabel.isBlank() && !isMe) {
+            Label senderLbl = new Label(groupSenderLabel);
+            senderLbl.setStyle("-fx-text-fill: #bcaeff; -fx-font-size: 11px; -fx-font-weight: bold;");
+            bubble.getChildren().add(senderLbl);
+        }
+
+        HBox content = new HBox(12);
+        content.setAlignment(Pos.CENTER_LEFT);
+        
+        Button playBtn = new Button("▶");
+        playBtn.getStyleClass().add("voice-play-btn");
+        
+        VBox meta = new VBox(4);
+        meta.setPrefWidth(160);
+        Label title = new Label("Voice Message");
+        title.setTextFill(javafx.scene.paint.Color.WHITE);
+        title.setFont(javafx.scene.text.Font.font("DM Sans", javafx.scene.text.FontWeight.BOLD, 13));
+        
+        ProgressBar pb = new ProgressBar(0);
+        pb.getStyleClass().add("voice-progress-bar");
+        pb.setMaxWidth(Double.MAX_VALUE);
+        
+        long durMillis = (parsed.data().length - 44) / 32; // 16kHz * 2 bytes = 32 bytes/ms
+        String duration = String.format("%d:%02d", (durMillis / 1000) / 60, (durMillis / 1000) % 60);
+        Label durLabel = new Label(duration);
+        durLabel.setTextFill(javafx.scene.paint.Color.web("#bcaeff"));
+        durLabel.setFont(javafx.scene.text.Font.font("DM Sans", 10));
+        
+        meta.getChildren().addAll(title, pb, durLabel);
+        content.getChildren().addAll(playBtn, meta);
+
+        playBtn.setOnAction(e -> playAudioData(parsed.data(), pb, playBtn));
+
+        Label tsLabel = new Label(timestamp != null ? timestamp : "");
+        tsLabel.getStyleClass().add(isMe ? "message-timestamp-sent" : "message-timestamp-received");
+        
+        bubble.getChildren().addAll(content, tsLabel);
+        container.getChildren().add(bubble);
+        msgbox.getChildren().add(container);
+        
+        allMessages.add(new MessageData(FileMessageCodec.PREFIX + "[Voice]", isMe, timestamp, "voice", container));
+    }
+
+    private Clip currentClip = null;
+    private javafx.animation.Timeline playbackTimeline = null;
+
+    private synchronized void playAudioData(byte[] data, ProgressBar pb, Button playBtn) {
+        if (playBtn.getText().equals("⏸")) {
+            if (currentClip != null) {
+                currentClip.stop();
+            }
+            return;
+        }
+
+        // Stop any currently playing audio (from any other message)
+        if (currentClip != null && currentClip.isRunning()) {
+            currentClip.stop();
+        }
+        if (playbackTimeline != null) {
+            playbackTimeline.stop();
+        }
+
+        new Thread(() -> {
+            try (java.io.ByteArrayInputStream bis = new java.io.ByteArrayInputStream(data)) {
+                AudioInputStream ais = AudioSystem.getAudioInputStream(bis);
+                Clip clip = AudioSystem.getClip();
+                clip.open(ais);
+                
+                Platform.runLater(() -> {
+                    currentClip = clip;
+                    playBtn.setText("⏸");
+                    
+                    playbackTimeline = new javafx.animation.Timeline(
+                        new javafx.animation.KeyFrame(Duration.millis(50), event -> {
+                            double progress = (double) clip.getFramePosition() / clip.getFrameLength();
+                            pb.setProgress(progress);
+                        })
+                    );
+                    playbackTimeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    playbackTimeline.play();
+                    
+                    clip.addLineListener(event -> {
+                        if (event.getType() == LineEvent.Type.STOP) {
+                            Platform.runLater(() -> {
+                                playbackTimeline.stop();
+                                pb.setProgress(0);
+                                playBtn.setText("▶");
+                            });
+                        }
+                    });
+                });
+
+                clip.start();
+                // keep thread alive while playing
+                Thread.sleep(clip.getMicrosecondLength() / 1000 + 100);
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showAlert("Error playing voice message: " + e.getMessage());
+                    playBtn.setText("▶");
+                });
+            }
+        }).start();
+    }
+
     private void displayFileMessage(String encoded, boolean isMe, String timestamp, String groupSenderLabel) {
         FileMessageCodec.Parsed parsed;
         try {
@@ -2056,7 +2203,78 @@ searchMessages.setOnKeyPressed(e -> {
             }
         }, "send-file").start();
     }
-    @FXML private void onVoiceToTextClick() { showAlert("Voice-to-text coming soon!"); }
+    @FXML
+    private void onVoiceMessageStart(MouseEvent event) {
+        if (selectedChatUserEmail == null && !isGroupChatActive) {
+            showAlert("Please select a conversation first.");
+            return;
+        }
+        try {
+            voiceRecordService.startRecording();
+            voiceMsgBtn.getStyleClass().add("recording-active");
+            
+            // Show recording overlay
+            recordingOverlay.setVisible(true);
+            recordingOverlay.setManaged(true);
+            msgField.setVisible(false);
+            
+            // Start timer
+            recordingSeconds = 0;
+            recordingTimeLabel.setText("0:00");
+            recordingTimeline = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(Duration.seconds(1), e -> {
+                    recordingSeconds++;
+                    long m = recordingSeconds / 60;
+                    long s = recordingSeconds % 60;
+                    recordingTimeLabel.setText(String.format("%d:%02d", m, s));
+                    
+                    // Blinking animation for dot
+                    recordingDot.setOpacity(recordingDot.getOpacity() == 1.0 ? 0.3 : 1.0);
+                })
+            );
+            recordingTimeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+            recordingTimeline.play();
+            
+        } catch (LineUnavailableException e) {
+            showAlert("Microphone error: " + e.getMessage());
+        } catch (Exception e) {
+            showAlert("Error: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onVoiceMessageStop(MouseEvent event) {
+        if (recordingTimeline != null) {
+            recordingTimeline.stop();
+        }
+        recordingOverlay.setVisible(false);
+        recordingOverlay.setManaged(false);
+        msgField.setVisible(true);
+        
+        if (!voiceRecordService.isRecording()) return;
+        byte[] audio = voiceRecordService.stopRecording();
+        voiceMsgBtn.getStyleClass().remove("recording-active");
+
+        if (audio.length > 2000) { // Arbitrary threshold for valid voice message
+            new Thread(() -> {
+                try {
+                    String encoded = FileMessageCodec.encode("voice_msg.wav", "audio/wav", audio);
+                    if (isGroupChatActive) sendGroupMessage(encoded);
+                    else sendPrivateMessage(encoded);
+                } catch (Exception e) {
+                    Platform.runLater(() -> showAlert("Failed to send voice message: " + e.getMessage()));
+                }
+            }).start();
+        } else if (audio.length > 0) {
+            showAlert("Voice message too short!");
+        }
+    }
+
+    @FXML
+    private void onVoiceToTextClick() {
+        // Kept for backward compatibility or accidental clicks
+        showAlert("Please hold the microphone button to record a voice message!");
+    }
     @FXML private void onChangeDisplayPictureClick() { showAlert("Change profile picture coming soon!"); }
     @FXML
     private void onAudioCallClick() {
@@ -2071,6 +2289,13 @@ searchMessages.setOnKeyPressed(e -> {
             hideCallOverlay();
             return;
         }
+        // ── Call Log Initialization ──
+        clIsCaller = true;
+        clCurrentCallPeer = normEmail(selectedChatUserEmail);
+        clCurrentCallType = "Audio";
+        clCurrentCallStartTime = 0;
+        clCurrentCallStatusOverride = null;
+
         // Ensure audio port is ready before initiating the call
         showCallingOverlay(selectedChatUserEmail, false);
         new Thread(() -> {
@@ -2109,6 +2334,13 @@ searchMessages.setOnKeyPressed(e -> {
             hideCallOverlay();
             return;
         }
+        // ── Call Log Initialization ──
+        clIsCaller = true;
+        clCurrentCallPeer = normEmail(selectedChatUserEmail);
+        clCurrentCallType = "Video";
+        clCurrentCallStartTime = 0;
+        clCurrentCallStatusOverride = null;
+
         videoCall = true;
         showCallingOverlay(selectedChatUserEmail, true);
         new Thread(() -> {
@@ -2532,9 +2764,44 @@ searchMessages.setOnKeyPressed(e -> {
             callOverlay.setVisible(false);
         }
     }
+    private String formatCallDuration(long ms) {
+        if (ms <= 0) return "00:00";
+        long secs = ms / 1000;
+        long mins = secs / 60;
+        secs = secs % 60;
+        long hours = mins / 60;
+        mins = mins % 60;
+        if (hours > 0) return String.format("%02d:%02d:%02d", hours, mins, secs);
+        return String.format("%02d:%02d", mins, secs);
+    }
+
     private void endActiveCallIfMatches(String callId) {
         if (callId == null || activeCallId == null) return;
         if (!activeCallId.equals(callId)) return;
+
+        // ── Finalize Call Log ──
+        if (clIsCaller && clCurrentCallPeer != null && currentUserEmail != null) {
+            String status = clCurrentCallStatusOverride;
+            long durationMs = 0;
+            if (status == null) {
+                if (clCurrentCallStartTime == 0) {
+                    status = "Missed";
+                } else {
+                    status = "Completed";
+                    durationMs = System.currentTimeMillis() - clCurrentCallStartTime;
+                }
+            }
+            String durStr = formatCallDuration(durationMs);
+            String logText = "[CALL_LOG]:" + clCurrentCallType + ":" + status + ":" + durStr;
+            String cmd = "SEND_MESSAGE|" + currentUserEmail + "|" + clCurrentCallPeer + "|" + logText;
+            SocketClient.sendPersistent(cmd);
+        }
+        // reset state
+        clIsCaller = false;
+        clCurrentCallPeer = null;
+        clCurrentCallStartTime = 0;
+        clCurrentCallStatusOverride = null;
+
         stopRingtone();
         callActive = false;
         activeCallId = null;

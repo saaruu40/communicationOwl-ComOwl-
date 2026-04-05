@@ -193,9 +193,27 @@
                             <cursor><Cursor fx:constant="HAND" /></cursor>
                         </Button>
 
-                        <TextField fx:id="msgField" prefHeight="40" promptText="Write a message..." style="-fx-background-color: #231a3d;                                           -fx-background-radius: 20;                                           -fx-border-color: rgba(123,44,255,0.35);                                           -fx-border-radius: 20;                                           -fx-border-width: 1;                                           -fx-text-fill: #f0eaff;                                           -fx-prompt-text-fill: #6b5a8a;                                           -fx-font-size: 14px;                                           -fx-font-family: 'DM Sans';                                           -fx-padding: 0 18 0 18;" HBox.hgrow="ALWAYS" />
+                        <StackPane HBox.hgrow="ALWAYS">
+                            <TextField fx:id="msgField" prefHeight="40" promptText="Write a message..." style="-fx-background-color: #231a3d;                                           -fx-background-radius: 20;                                           -fx-border-color: rgba(123,44,255,0.35);                                           -fx-border-radius: 20;                                           -fx-border-width: 1;                                           -fx-text-fill: #f0eaff;                                           -fx-prompt-text-fill: #6b5a8a;                                           -fx-font-size: 14px;                                           -fx-font-family: 'DM Sans';                                           -fx-padding: 0 18 0 18;" />
+                            
+                            <HBox fx:id="recordingOverlay" alignment="CENTER_LEFT" managed="false" spacing="10" styleClass="recording-overlay" visible="false">
+                                <children>
+                                    <Circle fx:id="recordingDot" radius="5" styleClass="recording-dot" />
+                                    <Label styleClass="recording-text" text="Recording..." />
+                                    <Label fx:id="recordingTimeLabel" styleClass="recording-timer" text="0:00" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label style="-fx-text-fill: rgba(255,255,255,0.4); -fx-font-size: 11px;" text="Release to send" />
+                                </children>
+                            </HBox>
+                        </StackPane>
 
-                        <Button fx:id="voiceToText" mnemonicParsing="false" onAction="#onVoiceToTextClick" prefHeight="38" prefWidth="38" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;" text="🎤">
+                        <Button fx:id="voiceMsgBtn"
+                                mnemonicParsing="false"
+                                onMousePressed="#onVoiceMessageStart"
+                                onMouseReleased="#onVoiceMessageStop"
+                                prefHeight="38" prefWidth="38"
+                                style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;"
+                                text="🎤">
                             <cursor><Cursor fx:constant="HAND" /></cursor>
                         </Button>
                         <Button fx:id="sendEmoji" mnemonicParsing="false" onAction="#onEmojiButtonClick" prefHeight="38" prefWidth="38" style="-fx-background-color: rgba(123,44,255 linear-gradient(to bottom right, #9b30ff, #6d12e8),0.15); -fx-background-radius: 19; -fx-border-color: transparent; -fx-border-radius: 19; -fx-border-width: 1; -fx-font-size: 14px;" text="😊">

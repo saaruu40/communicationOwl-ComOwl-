@@ -2,33 +2,39 @@
 
 /* Dialog pane styling */
 .dark-dialog {
-    -fx-background-color: #2e1a47; /* Dark purple background */
+    -fx-background-color: #2e1a47;
+    /* Dark purple background */
     background-color: #2e1a47;
 }
 
 .dark-dialog .dialog-pane {
-    -fx-background-color: #2e1a47; /* Dark purple */
+    -fx-background-color: #2e1a47;
+    /* Dark purple */
     background-color: #2e1a47;
 }
 
 .dark-dialog .dialog-pane .header-panel {
-    -fx-background-color: #1b0f2a; /* Even darker purple */
+    -fx-background-color: #1b0f2a;
+    /* Even darker purple */
     background-color: #1b0f2a;
 }
 
 .dark-dialog .dialog-pane .header-panel .label {
-    -fx-text-fill: #ffffff; /* White text for visibility */
+    -fx-text-fill: #ffffff;
+    /* White text for visibility */
 }
 
 /* Grid pane styling */
 .dark-grid {
-    -fx-background-color: #2e1a47; /* Dark purple background */
+    -fx-background-color: #2e1a47;
+    /* Dark purple background */
     background-color: #2e1a47;
 }
 
 /* Label styling */
 .dark-label {
-    -fx-text-fill: #e0e0e0; /* Light gray text */
+    -fx-text-fill: #e0e0e0;
+    /* Light gray text */
     color: #e0e0e0;
     -fx-font-family: "Segoe UI";
     font-family: "Segoe UI";
@@ -37,7 +43,8 @@
 }
 
 .dark-section-label {
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
     -fx-font-family: "Segoe UI";
     font-family: "Segoe UI";
@@ -47,12 +54,16 @@
 
 /* Text field styling */
 .dark-text-field {
-    -fx-background-color: #3c3c6e; /* Dark blue background */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue background */
     background-color: #3c3c6e;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
-    -fx-prompt-text-fill: #888888; /* Gray prompt text */
-    -fx-border-color: #555555; /* Gray border */
+    -fx-prompt-text-fill: #888888;
+    /* Gray prompt text */
+    -fx-border-color: #555555;
+    /* Gray border */
     border-color: #555555;
     -fx-border-width: 1px;
     border-width: 1px;
@@ -62,7 +73,8 @@
 }
 
 .dark-text-field:focused {
-    -fx-border-color: #7a4f97; /* Purple border when focused */
+    -fx-border-color: #7a4f97;
+    /* Purple border when focused */
     border-color: #7a4f97;
     -fx-border-width: 2px;
     border-width: 2px;
@@ -70,12 +82,16 @@
 
 /* Text area styling */
 .dark-text-area {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
-    -fx-prompt-text-fill: #888888; /* Gray prompt text */
-    -fx-border-color: #555555; /* Gray border */
+    -fx-prompt-text-fill: #888888;
+    /* Gray prompt text */
+    -fx-border-color: #555555;
+    /* Gray border */
     border-color: #555555;
     -fx-border-width: 1px;
     border-width: 1px;
@@ -85,32 +101,38 @@
 }
 
 .dark-text-area:focused {
-    -fx-border-color: #7a4f97; /* Light purple border when focused */
+    -fx-border-color: #7a4f97;
+    /* Light purple border when focused */
     border-color: #7a4f97;
     -fx-border-width: 2px;
     border-width: 2px;
 }
 
 .dark-text-area .content {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-text-area .scroll-pane {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-text-area .scroll-pane .viewport {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 /* List view styling */
 .dark-list-view {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
-    -fx-border-color: #555555; /* Gray border */
+    -fx-border-color: #555555;
+    /* Gray border */
     border-color: #555555;
     -fx-border-width: 1px;
     border-width: 1px;
@@ -120,57 +142,70 @@
 }
 
 .dark-list-view .list-cell {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
-    -fx-border-color: transparent; /* No border */
+    -fx-border-color: transparent;
+    /* No border */
     border-color: transparent;
 }
 
 .dark-list-view .list-cell:selected {
-    -fx-background-color: #7a4f97; /* Light purple */
+    -fx-background-color: #7a4f97;
+    /* Light purple */
     background-color: #7a4f97;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
 }
 
 .dark-list-view .list-cell:hover {
-    -fx-background-color: #5f4165; /* Purple-gray hover effect */
+    -fx-background-color: #5f4165;
+    /* Purple-gray hover effect */
     background-color: #5f4165;
 }
 
 .dark-list-view .list-cell:selected:hover {
-    -fx-background-color: #9a6c9e; /* Hover on selected cell */
+    -fx-background-color: #9a6c9e;
+    /* Hover on selected cell */
     background-color: #9a6c9e;
 }
 
 .dark-list-view .scroll-bar:vertical {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-list-view .scroll-bar:horizontal {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-list-view .scroll-bar .thumb {
-    -fx-background-color: #666666; /* Dark thumb */
+    -fx-background-color: #666666;
+    /* Dark thumb */
     background-color: #666666;
     -fx-background-radius: 5px;
 }
 
 .dark-list-view .scroll-bar .thumb:hover {
-    -fx-background-color: #777777; /* Hover on thumb */
+    -fx-background-color: #777777;
+    /* Hover on thumb */
     background-color: #777777;
 }
 
 /* Button styling */
 .dark-button {
-    -fx-background-color: #7a4f97; /* Light purple */
+    -fx-background-color: #7a4f97;
+    /* Light purple */
     background-color: #7a4f97;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
     -fx-border-radius: 4px;
     border-radius: 4px;
@@ -184,12 +219,14 @@
 }
 
 .dark-button:hover {
-    -fx-background-color: #9a6c9e; /* Light purple on hover */
+    -fx-background-color: #9a6c9e;
+    /* Light purple on hover */
     background-color: #9a6c9e;
 }
 
 .dark-button:pressed {
-    -fx-background-color: #5f4165; /* Pressed color */
+    -fx-background-color: #5f4165;
+    /* Pressed color */
     background-color: #5f4165;
 }
 
@@ -200,11 +237,14 @@
 
 /* Dialog button styling */
 .dark-dialog-button {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
-    -fx-text-fill: #ffffff; /* White text */
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
-    -fx-border-color: #555555; /* Gray border */
+    -fx-border-color: #555555;
+    /* Gray border */
     border-color: #555555;
     -fx-border-width: 1px;
     border-width: 1px;
@@ -216,58 +256,69 @@
 }
 
 .dark-dialog-button:hover {
-    -fx-background-color: #5f4165; /* Hover effect */
+    -fx-background-color: #5f4165;
+    /* Hover effect */
     background-color: #5f4165;
 }
 
 .dark-dialog-button-enabled {
-    -fx-background-color: #7a4f97; /* Light purple when enabled */
+    -fx-background-color: #7a4f97;
+    /* Light purple when enabled */
     background-color: #7a4f97;
     -fx-border-color: #7a4f97;
     border-color: #7a4f97;
 }
 
 .dark-dialog-button-enabled:hover {
-    -fx-background-color: #9a6c9e; /* Hover on enabled button */
+    -fx-background-color: #9a6c9e;
+    /* Hover on enabled button */
     background-color: #9a6c9e;
     -fx-border-color: #9a6c9e;
     border-color: #9a6c9e;
 }
 
 .dark-dialog-button-disabled {
-    -fx-background-color: #2a2a2a; /* Disabled button */
+    -fx-background-color: #2a2a2a;
+    /* Disabled button */
     background-color: #2a2a2a;
-    -fx-text-fill: #666666; /* Gray text */
+    -fx-text-fill: #666666;
+    /* Gray text */
     color: #666666;
-    -fx-border-color: #444444; /* Disabled border */
+    -fx-border-color: #444444;
+    /* Disabled border */
     border-color: #444444;
 }
 
 /* Scroll pane styling for text area */
 .dark-text-area .scroll-pane .scroll-bar:vertical {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-text-area .scroll-pane .scroll-bar:horizontal {
-    -fx-background-color: #3c3c6e; /* Dark blue */
+    -fx-background-color: #3c3c6e;
+    /* Dark blue */
     background-color: #3c3c6e;
 }
 
 .dark-text-area .scroll-pane .scroll-bar .thumb {
-    -fx-background-color: #666666; /* Dark thumb */
+    -fx-background-color: #666666;
+    /* Dark thumb */
     background-color: #666666;
     -fx-background-radius: 5px;
 }
 
 .dark-text-area .scroll-pane .scroll-bar .thumb:hover {
-    -fx-background-color: #777777; /* Hover on thumb */
+    -fx-background-color: #777777;
+    /* Hover on thumb */
     background-color: #777777;
 }
 
 /* Dialog title styling */
-.dark-dialog .dialog-pane > .header-panel > .graphic-container > .label {
-    -fx-text-fill: #ffffff; /* White text */
+.dark-dialog .dialog-pane>.header-panel>.graphic-container>.label {
+    -fx-text-fill: #ffffff;
+    /* White text */
     color: #ffffff;
     -fx-font-size: 16px;
     font-size: 16px;

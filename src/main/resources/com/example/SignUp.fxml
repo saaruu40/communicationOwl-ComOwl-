@@ -63,7 +63,7 @@
             <TextField fx:id="firstNameField" prefHeight="34.0"
                        style="-fx-background-color: transparent; -fx-border-color: #7B2CFF; -fx-border-radius: 4; -fx-background-radius: 4; -fx-text-fill: white; -fx-prompt-text-fill: #bcaeff;" />
 
-            <Label style="-fx-text-fill: #d7cfff; -fx-font-size: 12px; -fx-font-family: 'Times New Roman';" text="LAST NAME" />
+            <Label style="-fx-text-fill: #d7cfff; -fx-font-size: 12px; -fyx-font-family: 'Times New Roman';" text="LAST NAME" />
             <TextField fx:id="lastNameField" prefHeight="34.0"
                        style="-fx-background-color: transparent; -fx-border-color: #7B2CFF; -fx-border-radius: 4; -fx-background-radius: 4; -fx-text-fill: white; -fx-prompt-text-fill: #bcaeff;" />
 

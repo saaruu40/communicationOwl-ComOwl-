@@ -20,7 +20,8 @@ Rectangle {
 }
 
 /* Glow effect for input fields */
-TextField, PasswordField {
+TextField,
+PasswordField {
     -fx-background-color: rgba(30, 8, 60, 0.35);
     -fx-border-color: #aa77ff;
     -fx-border-radius: 6;
@@ -30,7 +31,8 @@ TextField, PasswordField {
     -fx-effect: dropshadow(gaussian, #9b55ff, 10, 0.4, 0, 0);
 }
 
-TextField:focused, PasswordField:focused {
+TextField:focused,
+PasswordField:focused {
     -fx-border-color: #d294ff;
     -fx-background-color: rgba(35, 9, 80, 0.55);
 }
@@ -48,6 +50,7 @@ Button {
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, #8a5dfb, 14, 0.32, 0, 0);
 }
+
 Button:hover {
     -fx-background-color: linear-gradient(to bottom, #ff6f00, #d50000);
     -fx-effect: dropshadow(gaussian, #ff6f00, 20, 0.2, 0, 0);
