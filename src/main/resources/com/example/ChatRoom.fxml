@@ -138,6 +138,10 @@
                             <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#onSearchButtonClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 14px;" text="🔍">
                                 <cursor><Cursor fx:constant="HAND" /></cursor>
                             </Button>
+                            <!-- 🦕 Dino Game button — opens game in new window -->
+                            <Button fx:id="dinoGameBtn" mnemonicParsing="false" onAction="#openDinoGame" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #5b21b6, #3b0764); -fx-background-radius: 18; -fx-border-color: rgba(167,139,250,0.4); -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 15px;" text="🦕">
+                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                            </Button>
                             <Button fx:id="audiocall" mnemonicParsing="false" onAction="#onAudioCallClick" prefHeight="36" prefWidth="36" style="-fx-background-color: linear-gradient(to bottom right, #9b30ff, #6d12e8); -fx-background-radius: 18; -fx-border-color: transparent; -fx-border-radius: 18; -fx-border-width: 1; -fx-font-size: 14px;" text="☎">
                                 <cursor><Cursor fx:constant="HAND" /></cursor>
                             </Button>

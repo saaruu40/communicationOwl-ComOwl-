@@ -20,20 +20,34 @@ import java.util.*;
 
 public class HomeController {
 
-    @FXML private TextField searchField;
-    @FXML private ImageView profileImageView;
-    @FXML private ImageView sidebarProfileImage;
-    @FXML private Label userNameLabel;
-    @FXML private Label sidebarUserName;
-    @FXML private Label sidebarUserEmail;
-    @FXML private Label requestBadge;
-    @FXML private Label notificationBadge;
-    @FXML private ListView<Friend> friendListView;
-    @FXML private ListView<String> searchResultListView;
-    @FXML private VBox searchResultPanel;
-    @FXML private AnchorPane chatContainer;
-    @FXML private VBox noChatPlaceholder;
-    @FXML private BorderPane chatView;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ImageView profileImageView;
+    @FXML
+    private ImageView sidebarProfileImage;
+    @FXML
+    private Label userNameLabel;
+    @FXML
+    private Label sidebarUserName;
+    @FXML
+    private Label sidebarUserEmail;
+    @FXML
+    private Label requestBadge;
+    @FXML
+    private Label notificationBadge;
+    @FXML
+    private ListView<Friend> friendListView;
+    @FXML
+    private ListView<String> searchResultListView;
+    @FXML
+    private VBox searchResultPanel;
+    @FXML
+    private AnchorPane chatContainer;
+    @FXML
+    private VBox noChatPlaceholder;
+    @FXML
+    private BorderPane chatView;
 
     private ChatController chatController;
     private List<Friend> allFriends = new ArrayList<>();
@@ -56,7 +70,7 @@ public class HomeController {
     @FXML
     private void initialize() {
         instance = this;
-        
+
         // Set user info
         userNameLabel.setText(currentFirstName);
         sidebarUserName.setText(currentFirstName + " " + currentLastName);
@@ -92,7 +106,8 @@ public class HomeController {
                     avatarPane.setPrefSize(48, 48);
                     Circle bg = new Circle(24);
                     bg.setFill(javafx.scene.paint.Color.web("#2a1e44"));
-                    String initialText = friend.getFirstName().isEmpty() ? "?" : friend.getFirstName().substring(0, 1).toUpperCase();
+                    String initialText = friend.getFirstName().isEmpty() ? "?"
+                            : friend.getFirstName().substring(0, 1).toUpperCase();
                     Label initial = new Label(initialText);
                     initial.setStyle("-fx-text-fill: #c4b0ff; -fx-font-size: 18px; -fx-font-weight: bold;");
                     avatarPane.getChildren().addAll(bg, initial);
@@ -104,8 +119,8 @@ public class HomeController {
                     Label nameLabel = new Label(friend.getFirstName() + " " + friend.getLastName());
                     nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-                    Label lastMessageLabel = new Label(friend.getLastMessage() != null ?
-                            friend.getLastMessage() : "Tap to start chatting");
+                    Label lastMessageLabel = new Label(
+                            friend.getLastMessage() != null ? friend.getLastMessage() : "Tap to start chatting");
                     lastMessageLabel.setStyle("-fx-text-fill: #bcaeff; -fx-font-size: 11px;");
 
                     infoBox.getChildren().addAll(nameLabel, lastMessageLabel);
@@ -114,12 +129,10 @@ public class HomeController {
                     rightBox.setAlignment(Pos.CENTER_RIGHT);
 
                     Circle statusDot = new Circle(6);
-                    statusDot.setFill(friend.isOnline() ?
-                            javafx.scene.paint.Color.web("#2ecc71") :
-                            javafx.scene.paint.Color.web("#7f8c8d"));
+                    statusDot.setFill(friend.isOnline() ? javafx.scene.paint.Color.web("#2ecc71")
+                            : javafx.scene.paint.Color.web("#7f8c8d"));
 
-                    Label timeLabel = new Label(friend.getLastMessageTime() != null ?
-                            friend.getLastMessageTime() : "");
+                    Label timeLabel = new Label(friend.getLastMessageTime() != null ? friend.getLastMessageTime() : "");
                     timeLabel.setStyle("-fx-text-fill: #6c5a8e; -fx-font-size: 9px;");
 
                     rightBox.getChildren().addAll(statusDot, timeLabel);
@@ -127,7 +140,8 @@ public class HomeController {
                     row.getChildren().addAll(avatarPane, infoBox, rightBox);
 
                     setGraphic(row);
-                    setStyle("-fx-background-color: transparent; -fx-border-color: #2a1e44; -fx-border-width: 0 0 1 0;");
+                    setStyle(
+                            "-fx-background-color: transparent; -fx-border-color: #2a1e44; -fx-border-width: 0 0 1 0;");
 
                     row.setOnMouseClicked(e -> openChat(friend));
                 }
@@ -409,9 +423,12 @@ public class HomeController {
     // Make this available for name/profile updates from child popups
     public void refreshUserInfo() {
         Platform.runLater(() -> {
-            if (userNameLabel != null) userNameLabel.setText(currentFirstName);
-            if (sidebarUserName != null) sidebarUserName.setText(currentFirstName + " " + currentLastName);
-            if (sidebarUserEmail != null) sidebarUserEmail.setText(currentEmail);
+            if (userNameLabel != null)
+                userNameLabel.setText(currentFirstName);
+            if (sidebarUserName != null)
+                sidebarUserName.setText(currentFirstName + " " + currentLastName);
+            if (sidebarUserEmail != null)
+                sidebarUserEmail.setText(currentEmail);
             loadProfilePicture();
         });
     }

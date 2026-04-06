@@ -1852,6 +1852,31 @@ searchMessages.setOnKeyPressed(e -> {
         }).start();
     }
     // ─────────────────────────────────────────────────────────────────────────
+    // Dino Game — launch & score sharing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Called by the 🦕 button in the chat header. Opens the game in a new window. */
+    @FXML
+    private void openDinoGame() {
+        com.example.dino.DinoGameLauncher.launch(this, selectedChatUserName);
+    }
+
+    /**
+     * Called by DinoGameLauncher when the user clicks "Share Score".
+     * Sends the score string as a normal chat message to the current conversation.
+     * Does nothing if no chat is selected.
+     */
+    public void sendMessageProgrammatically(String text) {
+        if (text == null || text.isBlank()) return;
+        if (isGroupChatActive) {
+            sendGroupMessage(text);
+        } else if (selectedChatUserEmail != null) {
+            sendPrivateMessage(text);
+        }
+        // If no chat open, silently do nothing
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Background Polling (incremental, non-blocking)
     // ─────────────────────────────────────────────────────────────────────────
     private void startMessageUpdateThread() {
