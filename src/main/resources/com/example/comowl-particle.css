@@ -1,0 +1,61 @@
+/* ============================================================
+   ComOwl — Particle System CSS  (comowl-particles.css)
+   ============================================================ */
+
+
+/* ── Root ───────────────────────────────────────────────────── */
+.root-pane {
+    -fx-background-color: #08000f;
+    -fx-cursor: none;
+}
+
+
+/* ── Background rectangle ───────────────────────────────────── */
+.bg-rect {
+    -fx-fill: linear-gradient(
+        from 0% 0% to 55% 100%,
+        #08000f 0%,
+        #0d0020 40%,
+        #060010 80%,
+        #020008 100%
+    );
+}
+
+
+/* ── Particle pane ──────────────────────────────────────────── */
+.particle-pane {
+    -fx-background-color: transparent;
+}
+
+
+/* ── Particle dot styles (assigned randomly by controller) ──── */
+
+/* Standard violet glow */
+.dot-violet {
+    -fx-fill: #9b30ffcc;
+    -fx-effect: dropshadow(gaussian, #9b30ff, 14, 0.55, 0, 0);
+}
+
+/* Bright lavender glow */
+.dot-lavender {
+    -fx-fill: #bf7fffdd;
+    -fx-effect: dropshadow(gaussian, #bf7fff, 18, 0.70, 0, 0);
+}
+
+/* Deep indigo glow */
+.dot-indigo {
+    -fx-fill: #6a00c8bb;
+    -fx-effect: dropshadow(gaussian, #6a00c8, 10, 0.50, 0, 0);
+}
+
+/* Pale lilac glow */
+.dot-lilac {
+    -fx-fill: #e0c8ffbb;
+    -fx-effect: dropshadow(gaussian, #d4b0ff, 12, 0.45, 0, 0);
+}
+
+/* Soft purple glow */
+.dot-soft {
+    -fx-fill: #d4b0ffaa;
+    -fx-effect: dropshadow(gaussian, #bf7fff, 16, 0.60, 0, 0);
+}

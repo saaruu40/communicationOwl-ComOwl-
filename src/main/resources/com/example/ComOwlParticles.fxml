@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.Rectangle?>
+
+<StackPane
+    xmlns="http://javafx.com/javafx/21"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="ComOwlParticleController"
+    fx:id="rootPane"
+    prefWidth="900"
+    prefHeight="620"
+    styleClass="root-pane"
+    stylesheets="@comowl-particles.css">
+
+    <!-- Layer 1 : dark gradient background -->
+    <Rectangle
+        fx:id="bgRect"
+        width="900"
+        height="620"
+        mouseTransparent="true"
+        styleClass="bg-rect"/>
+
+    <!-- Layer 2 : particle canvas — dots injected by controller -->
+    <Pane
+        fx:id="particlePane"
+        prefWidth="900"
+        prefHeight="620"
+        mouseTransparent="true"
+        styleClass="particle-pane"/>
+
+</StackPane>

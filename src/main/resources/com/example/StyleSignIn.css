@@ -1,57 +1,64 @@
-/* Background Image */
+/* StyleSignIn.css */
+
 .root {
-    -fx-background-image: url("/com/example/Image/SignIn.png");
-    -fx-background-size: cover;
-    -fx-background-position: center;
-    -fx-background-repeat: no-repeat;
+    -fx-background-color: #100720;
 }
 
-/* Styling for Label */
-.label {
-    -fx-text-fill: #d7cfff;
-    -fx-font-size: 16px;
-    -fx-font-family: 'Times New Roman';
+StackPane {
+    -fx-background-color: rgba(19, 4, 45, 0.85);
+    -fx-background-radius: 22;
+    -fx-padding: 22;
 }
 
-/* Styling for TextField */
-.text-field {
-    -fx-background-color: transparent;
-    -fx-border-color: #7B2CFF;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #bcaeff;
-    -fx-pref-height: 34px;
+Rectangle {
+    -fx-stroke: #9966ff;
+    -fx-stroke-width: 2;
+    -fx-effect: dropshadow(gaussian, #9966ff, 16, 0.3, 0, 0);
 }
 
-/* Styling for PasswordField */
-.password-field {
-    -fx-background-color: transparent;
-    -fx-border-color: #7B2CFF;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #bcaeff;
-    -fx-pref-height: 34px;
+TextField,
+PasswordField {
+    -fx-background-color: rgba(30, 8, 60, 0.35);
+    -fx-border-color: #aa77ff;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #f6f0ff;
+    -fx-prompt-text-fill: #c1aaff;
+    -fx-effect: dropshadow(gaussian, #9b55ff, 10, 0.4, 0, 0);
 }
 
-/* Button Styling */
-.button {
-    -fx-background-color: linear-gradient(to bottom, #7B2CFF, #5D16CC);
-    -fx-text-fill: white;
+TextField:focused,
+PasswordField:focused {
+    -fx-border-color: #d294ff;
+    -fx-background-color: rgba(35, 9, 80, 0.55);
+}
+
+Button {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #8a5dfb 0%, #5d2dd9 100%);
+    -fx-text-fill: #ffffff;
     -fx-font-size: 22px;
     -fx-font-family: 'Times New Roman';
-    -fx-border-color: #cdb7ff;
+    -fx-border-color: #beb4ff;
     -fx-border-width: 1;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-cursor: hand;
-    -fx-pref-height: 56px;
+    -fx-effect: dropshadow(gaussian, #8a5dfb, 14, 0.32, 0, 0);
 }
 
-/* Error Message Styling */
+Button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #a87aff 0%, #7040e0 100%);
+    -fx-effect: dropshadow(gaussian, #a87aff, 20, 0.35, 0, 0);
+}
+
+.label {
+    -fx-text-fill: #d7cfff;
+    -fx-font-size: 12px;
+    -fx-font-family: 'Times New Roman';
+}
+
 .error-label {
-    -fx-text-fill: red;
-    -fx-font-size: 16px;
+    -fx-text-fill: #ff6b6b;
+    -fx-font-size: 13px;
     -fx-font-family: 'Times New Roman';
 }
