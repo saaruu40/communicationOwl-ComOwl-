@@ -562,11 +562,14 @@ public class AuthenticationService {
     public String getMessages(String email1, String email2) {
 
         String sql = """
-            SELECT senderEmail, content, timestamp
-            FROM Messages
-            WHERE (senderEmail = ? AND receiverEmail = ?)
-            OR (senderEmail = ? AND receiverEmail = ?)
-            ORDER BY timestamp
+            SELECT * FROM (
+                SELECT senderEmail, content, timestamp
+                FROM Messages
+                WHERE (senderEmail = ? AND receiverEmail = ?)
+                OR (senderEmail = ? AND receiverEmail = ?)
+                ORDER BY timestamp DESC
+                LIMIT 50
+            ) ORDER BY timestamp ASC
         """;
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -622,6 +625,54 @@ public class AuthenticationService {
             pstmt.setString(3, email2);
             pstmt.setString(4, email1);
             pstmt.setString(5, sinceTimestamp);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                String content = rs.getString("content");
+                String type = (content != null && content.startsWith(com.codes.util.FileMessageCodec.PREFIX))
+                        ? "file" : "text";
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(content)
+                  .append("|")
+                  .append(rs.getString("timestamp"))
+                  .append("|")
+                  .append(type);
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    // Get messages BEFORE a timestamp for pagination
+    public String getMessagesBefore(String email1, String email2, String beforeTimestamp, int limit) {
+        String sql = """
+            SELECT * FROM (
+                SELECT senderEmail, content, timestamp
+                FROM Messages
+                WHERE ((senderEmail = ? AND receiverEmail = ?)
+                   OR  (senderEmail = ? AND receiverEmail = ?))
+                AND timestamp < ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ) ORDER BY timestamp ASC
+        """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email1);
+            pstmt.setString(2, email2);
+            pstmt.setString(3, email2);
+            pstmt.setString(4, email1);
+            pstmt.setString(5, beforeTimestamp);
+            pstmt.setInt(6, limit);
 
             ResultSet rs = pstmt.executeQuery();
 
@@ -912,11 +963,14 @@ public class AuthenticationService {
         if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
 
         String sql = """
-            SELECT senderEmail, message, timestamp
-            FROM GroupMessages
-            WHERE groupId = ?
-            ORDER BY timestamp
-            """;
+            SELECT * FROM (
+                SELECT senderEmail, message, timestamp
+                FROM GroupMessages
+                WHERE groupId = ?
+                ORDER BY timestamp DESC
+                LIMIT 50
+            ) ORDER BY timestamp ASC
+        """;
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -952,6 +1006,7 @@ public class AuthenticationService {
             WHERE groupId = ?
             AND timestamp > ?
             ORDER BY timestamp
+            LIMIT 50
             """;
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -959,6 +1014,46 @@ public class AuthenticationService {
 
             pstmt.setString(1, groupId);
             pstmt.setString(2, sinceTimestamp);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder sb = new StringBuilder();
+            while (rs.next()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(rs.getString("senderEmail"))
+                  .append("|")
+                  .append(rs.getString("message"))
+                  .append("|")
+                  .append(rs.getString("timestamp"));
+            }
+            return sb.length() > 0 ? sb.toString() : "EMPTY";
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+
+    public String getGroupMessagesBefore(String groupId, String beforeTimestamp, String requesterEmail, int limit) {
+        if (!isGroupMember(groupId, requesterEmail)) return "NOT_MEMBER";
+
+        String sql = """
+            SELECT * FROM (
+                SELECT senderEmail, message, timestamp
+                FROM GroupMessages
+                WHERE groupId = ?
+                AND timestamp < ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ) ORDER BY timestamp ASC
+        """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+            pstmt.setString(2, beforeTimestamp);
+            pstmt.setInt(3, limit);
 
             ResultSet rs = pstmt.executeQuery();
 

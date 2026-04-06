@@ -141,12 +141,7 @@ public class SignUpController {
     @FXML
     private void goToSignIn() {
         try {
-            Stage stage = (Stage) signUpButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/SignIn.fxml"));
-            loader.setRoot(new AnchorPane());
-            stage.setScene(new Scene(loader.load()));
-            stage.show();
+            App.setRoot("SignIn");
         } catch (IOException e) {
             e.printStackTrace();
         }

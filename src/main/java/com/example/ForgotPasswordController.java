@@ -1,24 +1,26 @@
 package com.example;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import javafx.stage.Stage;
 import java.io.IOException;
 
 public class ForgotPasswordController {
 
-    @FXML private TextField emailField;
-    @FXML private Label     recoveryQuestionLabel;  // Label for showing the question
-    @FXML private TextField answerField;
-    @FXML private Button    recoverButton;
-    @FXML private Label     errorMessage;
-    @FXML private HBox recoverButtonBox;
+    @FXML
+    private TextField emailField;
+    @FXML
+    private Label recoveryQuestionLabel; // Label for showing the question
+    @FXML
+    private TextField answerField;
+    @FXML
+    private Button recoverButton;
+    @FXML
+    private Label errorMessage;
+    @FXML
+    private HBox recoverButtonBox;
 
     private String verifiedEmail;
 
@@ -86,16 +88,11 @@ public class ForgotPasswordController {
         if ("ANSWER_CORRECT".equals(response)) {
             // Correct — go to the ResetPassword page
             errorMessage.setVisible(false);
-            ResetPasswordController.pendingEmail  = verifiedEmail;
+            ResetPasswordController.pendingEmail = verifiedEmail;
             ResetPasswordController.pendingAnswer = answer;
 
             try {
-                Stage stage = (Stage) recoverButton.getScene().getWindow();
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/ResetPassword.fxml"));
-                loader.setRoot(new AnchorPane());
-                stage.setScene(new Scene(loader.load()));
-                stage.show();
+                App.setRoot("ResetPassword");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -111,12 +108,7 @@ public class ForgotPasswordController {
     @FXML
     private void backToSignIn() {
         try {
-            Stage stage = (Stage) emailField.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/SignIn.fxml"));
-            loader.setRoot(new AnchorPane());
-            stage.setScene(new Scene(loader.load()));
-            stage.show();
+            App.setRoot("SignIn");
         } catch (IOException e) {
             e.printStackTrace();
         }

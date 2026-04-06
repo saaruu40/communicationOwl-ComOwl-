@@ -12,9 +12,12 @@ import java.io.IOException;
 
 public class ChangePasswordController {
 
-    @FXML private PasswordField newPasswordField;
-    @FXML private PasswordField confirmPasswordField;
-    @FXML private Label errorLabel;
+    @FXML
+    private PasswordField newPasswordField;
+    @FXML
+    private PasswordField confirmPasswordField;
+    @FXML
+    private Label errorLabel;
 
     public static Popup currentPopup;
 
@@ -48,13 +51,17 @@ public class ChangePasswordController {
 
         if (isUpdateSuccessful(response)) {
             ChatRoomController chatInstance = ChatRoomController.getInstance();
-            if (chatInstance != null) chatInstance.onAccountUpdate();
+            if (chatInstance != null)
+                chatInstance.onAccountUpdate();
             errorLabel.setText("Password updated successfully. Logging out...");
             errorLabel.setStyle("-fx-text-fill: green;");
             errorLabel.setVisible(true);
 
             // Close all popups
-            if (currentPopup != null) { currentPopup.hide(); currentPopup = null; }
+            if (currentPopup != null) {
+                currentPopup.hide();
+                currentPopup = null;
+            }
             ProfileSettingsController.currentPopup = null;
             UpdateAccountController.currentPopup = null;
             ChangeNameController.currentPopup = null;
@@ -82,7 +89,8 @@ public class ChangePasswordController {
     }
 
     private boolean isUpdateSuccessful(String response) {
-        if (response == null) return false;
+        if (response == null)
+            return false;
         String normalized = response.trim().toUpperCase();
         return normalized.contains("SUCCESS")
                 || normalized.contains("UPDATED")
@@ -94,7 +102,8 @@ public class ChangePasswordController {
     @FXML
     private void goBack() {
         try {
-            if (currentPopup != null) currentPopup.hide();
+            if (currentPopup != null)
+                currentPopup.hide();
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/UpdateProfile.fxml"));

@@ -13,27 +13,33 @@ import javafx.stage.Stage;
 
 public class ImageCropperController {
 
-    @FXML private Canvas    imageCanvas;
-    @FXML private Canvas    overlayCanvas;
-    @FXML private Button    cropButton;
-    @FXML private Button    cancelButton;
-    @FXML private StackPane canvasPane;
+    @FXML
+    private Canvas imageCanvas;
+    @FXML
+    private Canvas overlayCanvas;
+    @FXML
+    private Button cropButton;
+    @FXML
+    private Button cancelButton;
+    @FXML
+    private StackPane canvasPane;
 
     private Image originalImage;
-    private double imageX, imageY;         // Image position
-    private double imageDrawWidth;         // Drawn width of the image
-    private double imageDrawHeight;        // Drawn height of the image
+    private double imageX, imageY; // Image position
+    private double imageDrawWidth; // Drawn width of the image
+    private double imageDrawHeight; // Drawn height of the image
     private double dragStartX, dragStartY; // Starting point of drag
 
-    private static final double CANVAS_SIZE  = 400;
-    private static final double CIRCLE_SIZE  = 300; // Circular crop area
-    private static final double CIRCLE_X     = (CANVAS_SIZE - CIRCLE_SIZE) / 2;
-    private static final double CIRCLE_Y     = (CANVAS_SIZE - CIRCLE_SIZE) / 2;
+    private static final double CANVAS_SIZE = 400;
+    private static final double CIRCLE_SIZE = 300; // Circular crop area
+    private static final double CIRCLE_X = (CANVAS_SIZE - CIRCLE_SIZE) / 2;
+    private static final double CIRCLE_Y = (CANVAS_SIZE - CIRCLE_SIZE) / 2;
 
     // Will send the result back to SignUpController
     public interface CropCallback {
         void onCropped(WritableImage croppedImage, String base64);
     }
+
     private CropCallback cropCallback;
 
     public void setCropCallback(CropCallback callback) {
@@ -46,13 +52,12 @@ public class ImageCropperController {
         // Fit the image into the Canvas
         double ratio = Math.max(
                 CANVAS_SIZE / image.getWidth(),
-                CANVAS_SIZE / image.getHeight()
-        );
-        imageDrawWidth  = image.getWidth()  * ratio;
+                CANVAS_SIZE / image.getHeight());
+        imageDrawWidth = image.getWidth() * ratio;
         imageDrawHeight = image.getHeight() * ratio;
 
         // Keep it centered
-        imageX = (CANVAS_SIZE - imageDrawWidth)  / 2;
+        imageX = (CANVAS_SIZE - imageDrawWidth) / 2;
         imageY = (CANVAS_SIZE - imageDrawHeight) / 2;
 
         drawAll();
@@ -115,7 +120,7 @@ public class ImageCropperController {
     @FXML
     private void cropImage() {
         // Crop the image from the circular area
-        double scaleX = originalImage.getWidth()  / imageDrawWidth;
+        double scaleX = originalImage.getWidth() / imageDrawWidth;
         double scaleY = originalImage.getHeight() / imageDrawHeight;
 
         double srcX = (CIRCLE_X - imageX) * scaleX;

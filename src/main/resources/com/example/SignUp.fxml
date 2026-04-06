@@ -27,7 +27,8 @@
         </image>
     </ImageView>
 
-    <StackPane layoutX="390.0" layoutY="50.0" prefHeight="680.0" prefWidth="420.0">
+    <StackPane AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" pickOnBounds="false">
+        <StackPane maxWidth="420.0" maxHeight="680.0">
         <Rectangle arcHeight="20.0" arcWidth="20.0" fill="#0d0528AA" height="680.0"
                    stroke="#7B2CFF" strokeWidth="1.5" width="420.0" />
 
@@ -109,6 +110,7 @@
             </Label>
 
         </VBox>
+        </StackPane>
     </StackPane>
 
 </fx:root>

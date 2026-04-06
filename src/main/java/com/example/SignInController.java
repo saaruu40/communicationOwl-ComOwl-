@@ -2,12 +2,10 @@ package com.example;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import java.io.IOException;
 
@@ -59,17 +57,12 @@ public class SignInController {
 
             // ── Navigate to ChatRoom ──
             try {
-                Stage stage = (Stage) signInButton.getScene().getWindow();
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/ChatRoom.fxml"));
-                AnchorPane root = loader.load();
-
+                FXMLLoader loader = App.setRootWithLoader("ChatRoom");
                 ChatRoomController chatCtrl = loader.getController();
                 chatCtrl.setCurrentUserInfo(email, firstName);
 
-                stage.setScene(new Scene(root));
+                Stage stage = App.getStage();
                 stage.setOnCloseRequest(e -> chatCtrl.cleanup());
-                stage.show();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -85,16 +78,12 @@ public class SignInController {
         }
     }
 
-    @FXML private void goToSignUp()           { navigateTo("/com/example/SignUp.fxml",        true);  }
-    @FXML private void goToForgotPassword()   { navigateTo("/com/example/ForgetPassword.fxml", true); }
+    @FXML private void goToSignUp()           { navigateTo("SignUp");  }
+    @FXML private void goToForgotPassword()   { navigateTo("ForgetPassword"); }
 
-    private void navigateTo(String path, boolean useRoot) {
+    private void navigateTo(String fxml) {
         try {
-            Stage stage = (Stage) signInButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
-            if (useRoot) loader.setRoot(new AnchorPane());
-            stage.setScene(new Scene(loader.load()));
-            stage.show();
+            App.setRoot(fxml);
         } catch (IOException e) {
             e.printStackTrace();
             showError("Could not load screen.");

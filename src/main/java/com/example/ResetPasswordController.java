@@ -1,13 +1,9 @@
 package com.example;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
-import javafx.scene.layout.AnchorPane;
-import javafx.stage.Stage;
 import java.io.IOException;
 
 public class ResetPasswordController {
@@ -79,12 +75,7 @@ public class ResetPasswordController {
 
     private void goToSignIn() {
         try {
-            Stage stage = (Stage) resetPasswordButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/SignIn.fxml"));
-            loader.setRoot(new AnchorPane());
-            stage.setScene(new Scene(loader.load()));
-            stage.show();
+            App.setRoot("SignIn");
         } catch (IOException e) {
             e.printStackTrace();
         }

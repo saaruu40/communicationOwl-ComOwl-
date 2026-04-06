@@ -19,14 +19,16 @@ public class GeminiChatService {
 
     /**
      * Creates a new GeminiChatService.
-     * @throws IllegalStateException if GEMINI_API_KEY environment variable is not set.
+     * 
+     * @throws IllegalStateException if GEMINI_API_KEY environment variable is not
+     *                               set.
      */
     public GeminiChatService() {
         String apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
                     "GEMINI_API_KEY environment variable is not set. " +
-                    "Please set it before launching the application.");
+                            "Please set it before launching the application.");
         }
         this.client = Client.builder().apiKey(apiKey).build();
     }

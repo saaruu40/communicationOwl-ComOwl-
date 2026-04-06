@@ -12,6 +12,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -29,10 +30,12 @@
 
 <AnchorPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f0a1e;" styleClass="anchor" stylesheets="@chatStyle.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.ChatRoomController">
     <children>
+        <BorderPane AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!--  TOP NAVIGATION BAR  (full 1280px × 56px)                 -->
         <!-- ══════════════════════════════════════════════════════════ -->
+        <top>
         <HBox alignment="CENTER_LEFT" prefHeight="56.0" prefWidth="1280.0" spacing="0" style="-fx-background-color: #1c1436;                      -fx-border-color: rgba(123,44,255,0.25);                      -fx-border-width: 0 0 1 0;                      -fx-padding: 0 18 0 18;">
 
             <!-- ── LEFT: App name ── -->
@@ -66,13 +69,15 @@
 
             </HBox>
         </HBox>
+        </top>
 
 
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!--  LEFT SIDEBAR  (x=0, y=56, 280×664)                       -->
         <!-- ══════════════════════════════════════════════════════════ -->
-        <Pane fx:id="leftbase" layoutY="56.0" prefHeight="664.0" prefWidth="280.0" style="-fx-background-color: #16102b;                      -fx-border-color: rgba(123,44,255,0.18);                      -fx-border-width: 0 1 0 0;">
+        <left>
+        <Pane fx:id="leftbase" prefWidth="280.0" style="-fx-background-color: #16102b;                      -fx-border-color: rgba(123,44,255,0.18);                      -fx-border-width: 0 1 0 0;">
             <children>
 
                 <!-- ── Search at top of conversation list ── -->
@@ -105,14 +110,14 @@
 
             </children>
         </Pane>
+        </left>
 
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!--  CENTER CHAT AREA  (x=280, y=56, 720×664)                 -->
         <!-- ══════════════════════════════════════════════════════════ -->
-        <Pane layoutX="280.0" layoutY="56.0" prefHeight="664.0" prefWidth="720.0" style="-fx-background-color: #0f0a1e;">
-            <children>
-                <VBox fx:id="chatbody" prefHeight="664.0" prefWidth="720.0">
+        <center>
+                <VBox fx:id="chatbody" style="-fx-background-color: #0f0a1e;">
 
                     <!-- ── Chat Header ── -->
                     <HBox fx:id="clientCard" alignment="CENTER_LEFT" prefHeight="62.0" prefWidth="720.0" spacing="14" style="-fx-background-color: #16102b;                                  -fx-border-color: rgba(123,44,255,0.18);                                  -fx-border-width: 0 0 1 0;                                  -fx-padding: 0 16 0 20;">
@@ -155,15 +160,15 @@
                     </HBox>
 
                     <!-- ── Message Area ── -->
-                    <Pane prefWidth="720.0" VBox.vgrow="ALWAYS">
+                    <StackPane VBox.vgrow="ALWAYS">
 
-                        <ImageView fx:id="chatBG" fitHeight="602.0" fitWidth="720.0" opacity="0.07" pickOnBounds="true" preserveRatio="false">
+                        <ImageView fx:id="chatBG" opacity="0.07" pickOnBounds="true" preserveRatio="false">
                             <image>
                                 <Image url="@../Images/hogwarts_background.jpg" />
                             </image>
                         </ImageView>
 
-                        <ScrollPane fx:id="chatScroll" fitToWidth="true" hbarPolicy="NEVER" prefHeight="602.0" prefWidth="720.0" style="-fx-background-color: transparent;                                            -fx-background: transparent;                                            -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
+                        <ScrollPane fx:id="chatScroll" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent;                                            -fx-background: transparent;                                            -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
                             <content>
                                 <VBox fx:id="msgbox" prefWidth="720.0" spacing="4">
                                     <padding>
@@ -188,8 +193,8 @@
                             </children>
                         </StackPane>
 
-                        <StackPane fx:id="callOverlay" prefHeight="602.0" prefWidth="720.0" style="-fx-background-color: rgba(0,0,0,0.82);" visible="false" />
-                    </Pane>
+                        <StackPane fx:id="callOverlay" style="-fx-background-color: rgba(0,0,0,0.82);" visible="false" />
+                    </StackPane>
 
                     <!-- ── Input Bar ── -->
                     <HBox alignment="CENTER" prefHeight="62.0" prefWidth="720.0" spacing="10" style="-fx-background-color: #16102b;                                  -fx-border-color: rgba(123,44,255,0.18);                                  -fx-border-width: 1 0 0 0;                                  -fx-padding: 11 16 11 16;">
@@ -229,14 +234,14 @@
                     </HBox>
 
                 </VBox>
-            </children>
-        </Pane>
+        </center>
 
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!--  RIGHT PANEL  (x=1000, y=56, 280×664)                     -->
         <!-- ══════════════════════════════════════════════════════════ -->
-        <StackPane layoutX="1000.0" layoutY="56.0" prefHeight="664.0" prefWidth="280.0">
+        <right>
+        <StackPane prefWidth="280.0">
             <children>
 
                 <ImageView fitHeight="664.0" fitWidth="280.0" opacity="0.12" pickOnBounds="true" preserveRatio="false">
@@ -321,25 +326,29 @@
 
             </children>
         </StackPane>
+        </right>
+        </BorderPane>
 
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!--  EMOJI PICKER OVERLAY                                      -->
         <!-- ══════════════════════════════════════════════════════════ -->
-        <Pane fx:id="emojipane_test" onMouseClicked="#onCloseEmojiPicker" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: rgba(0,0,0,0.4);" visible="false">
+        <StackPane fx:id="emojipane_test" onMouseClicked="#onCloseEmojiPicker" style="-fx-background-color: rgba(0,0,0,0.4);" visible="false" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
             <children>
-                <ScrollPane fx:id="emojiscroller" hbarPolicy="NEVER" layoutX="590.0" layoutY="390.0" onMouseClicked="#consumeEvent" prefHeight="280.0" prefWidth="300.0" style="-fx-background-color: #1c1436;                                    -fx-background-radius: 14;                                    -fx-border-color: rgba(123,44,255,0.4);                                    -fx-border-radius: 14;                                    -fx-border-width: 1;                                    -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),18,0,0,6);" vbarPolicy="AS_NEEDED">
-                    <content>
-                        <VBox fx:id="emojibox" prefWidth="300.0" spacing="4" style="-fx-background-color: #1c1436;">
-                            <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
-                        </VBox>
-                    </content>
-                </ScrollPane>
-                <Button fx:id="closeEmojiPicker" layoutX="884.0" layoutY="364.0" mnemonicParsing="false" onAction="#onCloseEmojiPicker" prefHeight="26" prefWidth="26" style="-fx-background-color: #7B2CFF;                                -fx-background-radius: 13;                                -fx-border-color: transparent;                                -fx-text-fill: white;                                -fx-font-size: 11px;" text="✕">
-                    <cursor><Cursor fx:constant="HAND" /></cursor>
-                </Button>
+                <StackPane maxWidth="300.0" maxHeight="280.0">
+                    <ScrollPane fx:id="emojiscroller" hbarPolicy="NEVER" onMouseClicked="#consumeEvent" style="-fx-background-color: #1c1436;                                    -fx-background-radius: 14;                                    -fx-border-color: rgba(123,44,255,0.4);                                    -fx-border-radius: 14;                                    -fx-border-width: 1;                                    -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),18,0,0,6);" vbarPolicy="AS_NEEDED">
+                        <content>
+                            <VBox fx:id="emojibox" prefWidth="280.0" spacing="4" style="-fx-background-color: #1c1436;">
+                                <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+                    <Button fx:id="closeEmojiPicker" mnemonicParsing="false" onAction="#onCloseEmojiPicker" StackPane.alignment="TOP_RIGHT" translateX="13" translateY="-13" prefHeight="26" prefWidth="26" style="-fx-background-color: #7B2CFF;                                -fx-background-radius: 13;                                -fx-border-color: transparent;                                -fx-text-fill: white;                                -fx-font-size: 11px;" text="✕">
+                        <cursor><Cursor fx:constant="HAND" /></cursor>
+                    </Button>
+                </StackPane>
             </children>
-        </Pane>
+        </StackPane>
 
     </children>
 </AnchorPane>

@@ -3,31 +3,36 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Button?>
 
 <StackPane
     xmlns="http://javafx.com/javafx/21"
     xmlns:fx="http://javafx.com/fxml/1"
-    fx:controller="ComOwlParticleController"
+    fx:controller="com.example.ComOwlParticleController"
     fx:id="rootPane"
-    prefWidth="900"
-    prefHeight="620"
     styleClass="root-pane"
-    stylesheets="@comowl-particles.css">
+    stylesheets="@comowl-particle.css">
 
     <!-- Layer 1 : dark gradient background -->
-    <Rectangle
+    <Region
         fx:id="bgRect"
-        width="900"
-        height="620"
         mouseTransparent="true"
         styleClass="bg-rect"/>
 
     <!-- Layer 2 : particle canvas — dots injected by controller -->
     <Pane
         fx:id="particlePane"
-        prefWidth="900"
-        prefHeight="620"
         mouseTransparent="true"
         styleClass="particle-pane"/>
+
+    <!-- Layer 3 : UI Overlay -->
+    <VBox alignment="CENTER" pickOnBounds="false" spacing="20">
+        <Label text="ComOwl" styleClass="hero-title"/>
+        <Label text="Connect. Communicate. Collaborate." styleClass="hero-subtitle"/>
+        <Button text="Get Started" onAction="#handleGetStarted" styleClass="hero-button" />
+    </VBox>
 
 </StackPane>

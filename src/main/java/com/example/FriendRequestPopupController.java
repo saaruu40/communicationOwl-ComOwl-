@@ -13,7 +13,8 @@ import javafx.stage.Popup;
 
 public class FriendRequestPopupController {
 
-    @FXML private ListView<String> requestListView;
+    @FXML
+    private ListView<String> requestListView;
 
     public static Popup currentPopup;
 
@@ -28,12 +29,15 @@ public class FriendRequestPopupController {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); return; }
+                if (empty || item == null) {
+                    setGraphic(null);
+                    return;
+                }
 
-                String[] p    = item.split(":");
-                String email  = p[0];
-                String first  = p.length > 1 ? p[1] : email;
-                String last   = p.length > 2 ? p[2] : "";
+                String[] p = item.split(":");
+                String email = p[0];
+                String first = p.length > 1 ? p[1] : email;
+                String last = p.length > 2 ? p[2] : "";
 
                 // Avatar
                 StackPane av = new StackPane();
@@ -82,9 +86,10 @@ public class FriendRequestPopupController {
                     "ACCEPT_REQUEST|" + senderEmail + "|" + HomeController.currentEmail);
             Platform.runLater(() -> {
                 if ("ACCEPT_SUCCESS".equals(resp)) {
-                    loadRequests();  // refresh popup list
+                    loadRequests(); // refresh popup list
                     ChatRoomController chat = ChatRoomController.getInstance();
-                    if (chat != null) chat.loadFriendRequestBadge();
+                    if (chat != null)
+                        chat.loadFriendRequestBadge();
                     // Refresh Home friend list if open
                     HomeController home = HomeController.getInstance();
                     if (home != null) {
@@ -106,9 +111,10 @@ public class FriendRequestPopupController {
                     "DECLINE_REQUEST|" + senderEmail + "|" + HomeController.currentEmail);
             Platform.runLater(() -> {
                 if ("DECLINE_SUCCESS".equals(resp)) {
-                    loadRequests();  // refresh popup list
+                    loadRequests(); // refresh popup list
                     ChatRoomController chat = ChatRoomController.getInstance();
-                    if (chat != null) chat.loadFriendRequestBadge();
+                    if (chat != null)
+                        chat.loadFriendRequestBadge();
                     // Refresh Home pending badge
                     HomeController home = HomeController.getInstance();
                     if (home != null) {
@@ -126,11 +132,14 @@ public class FriendRequestPopupController {
         new Thread(() -> {
             String resp = SocketClient.send("GET_PENDING|" + HomeController.currentEmail);
             Platform.runLater(() -> {
-                if (resp == null || !resp.startsWith("PENDING|")) return;
+                if (resp == null || !resp.startsWith("PENDING|"))
+                    return;
                 String data = resp.substring("PENDING|".length());
-                if (data.isBlank() || "EMPTY".equals(data)) return;
+                if (data.isBlank() || "EMPTY".equals(data))
+                    return;
                 for (String r : data.split(",")) {
-                    if (!r.isBlank()) requestListView.getItems().add(r.trim());
+                    if (!r.isBlank())
+                        requestListView.getItems().add(r.trim());
                 }
             });
         }).start();
@@ -138,6 +147,7 @@ public class FriendRequestPopupController {
 
     @FXML
     private void closePopup() {
-        if (currentPopup != null) currentPopup.hide();
+        if (currentPopup != null)
+            currentPopup.hide();
     }
 }

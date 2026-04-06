@@ -38,7 +38,10 @@ public class AudioCallService {
     public int bindPort() throws Exception {
         // Close any previous socket
         if (socket != null && !socket.isClosed()) {
-            try { socket.close(); } catch (Exception ignored) {}
+            try {
+                socket.close();
+            } catch (Exception ignored) {
+            }
         }
         socket = new DatagramSocket(0);
         socket.setReuseAddress(true);
@@ -55,7 +58,8 @@ public class AudioCallService {
 
     /**
      * Opens mic + speakers, then starts sending/receiving audio with the peer.
-     * Call this ONLY when a call is actually established (CALL_ESTABLISHED received).
+     * Call this ONLY when a call is actually established (CALL_ESTABLISHED
+     * received).
      */
     public void connectToPeer(InetAddress peerAddress, int peerPort) throws Exception {
         if (socket == null || socket.isClosed())
@@ -187,8 +191,10 @@ public class AudioCallService {
         mic = null;
 
         try {
-            if (speakers != null) speakers.flush();
-        } catch (Exception ignored) {}
+            if (speakers != null)
+                speakers.flush();
+        } catch (Exception ignored) {
+        }
         safeClose(speakers);
         speakers = null;
 
@@ -203,8 +209,10 @@ public class AudioCallService {
         stopAudioOnly();
 
         try {
-            if (socket != null) socket.close();
-        } catch (Exception ignored) {}
+            if (socket != null)
+                socket.close();
+        } catch (Exception ignored) {
+        }
         socket = null;
     }
 
@@ -228,7 +236,8 @@ public class AudioCallService {
 
     /** Returns seconds since connectToPeer() was called, or 0 if not in a call. */
     public long callDurationSeconds() {
-        if (callStartTime == 0L) return 0L;
+        if (callStartTime == 0L)
+            return 0L;
         return (System.currentTimeMillis() - callStartTime) / 1000;
     }
 
@@ -244,9 +253,16 @@ public class AudioCallService {
     // ── Internal helpers ────────────────────────────────────────────────
 
     private static void safeClose(DataLine line) {
-        if (line == null) return;
-        try { line.stop(); } catch (Exception ignored) {}
-        try { line.close(); } catch (Exception ignored) {}
+        if (line == null)
+            return;
+        try {
+            line.stop();
+        } catch (Exception ignored) {
+        }
+        try {
+            line.close();
+        } catch (Exception ignored) {
+        }
     }
 
     private static void bestEffortSetGain(Line line) {

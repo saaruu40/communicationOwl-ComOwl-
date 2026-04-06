@@ -255,6 +255,12 @@ public class ClientHandler implements Runnable {
                 String result = authService.getMessagesSince(parts[1], parts[2], parts[3]);
                 return result;
 
+            } else if (parts[0].equalsIgnoreCase("GET_MESSAGES_BEFORE")) {
+                // GET_MESSAGES_BEFORE|email1|email2|beforeTimestamp|limit
+                int limit = parts.length > 4 ? Integer.parseInt(parts[4]) : 50;
+                String result = authService.getMessagesBefore(parts[1], parts[2], parts[3], limit);
+                return result;
+
             } else if (parts[0].equalsIgnoreCase("SEND_MESSAGE")) {
                 String[] p = command.split("\\|", 4);
                 if (p.length < 4) return "MESSAGE_FAILED";
@@ -286,6 +292,12 @@ public class ClientHandler implements Runnable {
             } else if (parts[0].equalsIgnoreCase("GET_GROUP_MESSAGES_SINCE")) {
                 // GET_GROUP_MESSAGES_SINCE|groupId|sinceTimestamp|requesterEmail
                 String result = authService.getGroupMessagesSince(parts[1], parts[2], parts[3]);
+                return result;
+
+            } else if (parts[0].equalsIgnoreCase("GET_GROUP_MESSAGES_BEFORE")) {
+                // GET_GROUP_MESSAGES_BEFORE|groupId|beforeTimestamp|requesterEmail|limit
+                int limit = parts.length > 4 ? Integer.parseInt(parts[4]) : 50;
+                String result = authService.getGroupMessagesBefore(parts[1], parts[2], parts[3], limit);
                 return result;
 
             } else if (parts[0].equalsIgnoreCase("KEEP_ALIVE")) {

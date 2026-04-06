@@ -18,7 +18,8 @@ import java.util.Base64;
 
 public class ChangeProfilePictureController {
 
-    @FXML private ImageView profileImageView;
+    @FXML
+    private ImageView profileImageView;
 
     public static Popup currentPopup;
     private String newProfilePicBase64 = "";
@@ -80,7 +81,8 @@ public class ChangeProfilePictureController {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     byte[] buf = new byte[1024];
                     int bytesRead;
-                    while ((bytesRead = fis.read(buf)) != -1) bos.write(buf, 0, bytesRead);
+                    while ((bytesRead = fis.read(buf)) != -1)
+                        bos.write(buf, 0, bytesRead);
                     newProfilePicBase64 = Base64.getEncoder().encodeToString(bos.toByteArray());
                     fis.close();
                 } catch (IOException e) {
@@ -105,7 +107,8 @@ public class ChangeProfilePictureController {
                 iv.setImage(img);
                 return;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // Fallback to default avatar
         try {
@@ -114,12 +117,14 @@ public class ChangeProfilePictureController {
                 iv.setImage(defaultImg);
                 return;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     @FXML
     private void submitPicture() {
-        if (newProfilePicBase64.isEmpty()) return;
+        if (newProfilePicBase64.isEmpty())
+            return;
 
         String response = SocketClient.send(
                 "UPDATE_PICTURE|" + HomeController.currentEmail + "|" + newProfilePicBase64);
@@ -149,7 +154,8 @@ public class ChangeProfilePictureController {
             }
 
             ChatRoomController chatInstance = ChatRoomController.getInstance();
-            if (chatInstance != null) chatInstance.onAccountUpdate();
+            if (chatInstance != null)
+                chatInstance.onAccountUpdate();
             goBack();
         } else {
             // Optionally keep old profile picture or show message
@@ -158,7 +164,8 @@ public class ChangeProfilePictureController {
     }
 
     private boolean isUpdateSuccessful(String response) {
-        if (response == null) return false;
+        if (response == null)
+            return false;
         String normalized = response.trim().toUpperCase();
         return normalized.contains("SUCCESS")
                 || normalized.contains("UPDATED")
@@ -170,7 +177,8 @@ public class ChangeProfilePictureController {
     @FXML
     private void goBack() {
         try {
-            if (currentPopup != null) currentPopup.hide();
+            if (currentPopup != null)
+                currentPopup.hide();
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/UpdateProfile.fxml"));

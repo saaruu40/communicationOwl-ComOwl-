@@ -2,7 +2,6 @@ package com.example;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ToggleButton;
@@ -19,8 +18,10 @@ import java.util.Optional;
 
 public class ProfileSettingsController {
 
-    @FXML private ImageView    profileImageView;
-    @FXML private ToggleButton notificationToggle;
+    @FXML
+    private ImageView profileImageView;
+    @FXML
+    private ToggleButton notificationToggle;
 
     public static Popup currentPopup;
 
@@ -54,7 +55,8 @@ public class ProfileSettingsController {
 
     @FXML
     private void closePopup() {
-        if (currentPopup != null) currentPopup.hide();
+        if (currentPopup != null)
+            currentPopup.hide();
     }
 
     @FXML
@@ -71,7 +73,9 @@ public class ProfileSettingsController {
             Stage stage = getMainStage();
             if (stage != null)
                 popup.show(stage, stage.getX() + stage.getWidth() - 340, stage.getY() + 70);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -88,7 +92,9 @@ public class ProfileSettingsController {
             Stage stage = getMainStage();
             if (stage != null)
                 popup.show(stage, stage.getX() + stage.getWidth() - 300, stage.getY() + 70);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -105,7 +111,9 @@ public class ProfileSettingsController {
             Stage stage = getMainStage();
             if (stage != null)
                 popup.show(stage, stage.getX() + stage.getWidth() - 600, stage.getY() + 70);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -113,15 +121,10 @@ public class ProfileSettingsController {
         closePopup();
         SocketClient.send("LOGOUT");
         try {
-            Stage stage = getMainStage();
-            if (stage != null) {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/SignIn.fxml"));
-                loader.setRoot(new AnchorPane());
-                stage.setScene(new Scene(loader.load()));
-                stage.show();
-            }
-        } catch (IOException e) { e.printStackTrace(); }
+            App.setRoot("SignIn");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
