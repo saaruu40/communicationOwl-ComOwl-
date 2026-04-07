@@ -615,7 +615,13 @@ public class ChatRoomController {
         } else if (type.equalsIgnoreCase("NEW_MESSAGE")) {
             String snippet = payload;
             if (senderEmail != null && !senderEmail.isBlank()) {
-                lastMessagePreviews.put(senderEmail, snippet);
+                if (FileMessageCodec.isFileMessage(snippet)) {
+                    try {
+                        FileMessageCodec.Parsed p = FileMessageCodec.decode(snippet);
+                        snippet = "📎 " + p.filename();
+                    } catch (Exception ignored) {}
+                }
+                lastMessagePreviews.put(normEmail(senderEmail), snippet);
                 unreadMessageCount.merge(senderEmail, 1, Integer::sum);
                 moveConversationToTop(senderEmail);
                 if (Objects.equals(normEmail(senderEmail), normEmail(selectedChatUserEmail))) {
@@ -897,11 +903,22 @@ public class ChatRoomController {
             return;
         }
         for (String u : users) {
-            String[] p = u.split(":", 4);
+            String[] p = u.split(":", 6);
             String email = p.length > 0 ? p[0].trim() : "";
             String first = p.length > 1 ? p[1].trim() : "";
             String last = p.length > 2 ? p[2].trim() : "";
             String pic = p.length > 3 ? p[3].trim() : "";
+            
+            if (isConversationList && p.length >= 6) {
+                String encodedMsg = p[4];
+                if (!encodedMsg.isEmpty()) {
+                    try {
+                        byte[] decoded = java.util.Base64.getDecoder().decode(encodedMsg);
+                        String lastMsg = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+                        lastMessagePreviews.put(normEmail(email), lastMsg);
+                    } catch (Exception ignored) {}
+                }
+            }
             boolean isFriend = friendEmails.contains(email);
             boolean isSent = sentRequests.contains(email);
             friendslist.getChildren()
@@ -949,13 +966,23 @@ public class ChatRoomController {
         previewLabel.setTextFill(Color.web("#c4c7d6"));
         previewLabel.setFont(new Font("DM Sans", 11));
         int unreadCount = isConversationList ? unreadMessageCount.getOrDefault(email, 0) : 0;
+        String previewText = lastMessagePreviews.getOrDefault(normEmail(email), "");
+        if (FileMessageCodec.isFileMessage(previewText)) {
+            try {
+                FileMessageCodec.Parsed parsed = FileMessageCodec.decode(previewText);
+                previewText = "📎 " + parsed.filename();
+            } catch (Exception e) {
+                previewText = "📎 Attachment";
+            }
+        }
+        
         if (isConversationList && unreadCount > 0) {
             nameLabel.setStyle("-fx-text-fill: #f3f4d2; -fx-font-size: 14px; -fx-font-weight: bold;");
             previewLabel.setStyle("-fx-text-fill: #f7f7ff; -fx-font-weight: bold;");
-            previewLabel.setText(lastMessagePreviews.getOrDefault(email, ""));
+            previewLabel.setText(previewText);
         } else {
             nameLabel.setStyle("-fx-text-fill: #f3f4d2; -fx-font-size: 14px;");
-            previewLabel.setText(lastMessagePreviews.getOrDefault(email, ""));
+            previewLabel.setText(previewText);
         }
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -2211,7 +2238,7 @@ public class ChatRoomController {
                     // Keep the sender conversation at top and update preview immediately, then
                     // refresh history.
                     if (selectedChatUserEmail != null) {
-                        lastMessagePreviews.put(selectedChatUserEmail, text);
+                        lastMessagePreviews.put(normEmail(selectedChatUserEmail), text);
                         moveConversationToTop(selectedChatUserEmail);
                         loadNotificationBadge();
                     }
@@ -2650,10 +2677,13 @@ public class ChatRoomController {
                 String response = SocketClient.send(cmd);
                 Platform.runLater(() -> {
                     if (response != null && response.startsWith("MESSAGE_SENT")) {
-                        if (isGroupChatActive)
+                        if (isGroupChatActive) {
                             pollGroupMessages();
-                        else
+                        } else {
+                            lastMessagePreviews.put(normEmail(selectedChatUserEmail), payload);
+                            loadConversationList();
                             pollPrivateMessages();
+                        }
                     } else {
                         showAlert("Failed to send file.");
                     }

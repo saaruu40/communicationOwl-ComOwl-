@@ -428,7 +428,15 @@ public class AuthenticationService {
     // Friend List
     public String getFriendList(String email) {
         String sql = """
-        SELECT u.email, u.firstName, u.lastName, u.profilePicture
+        SELECT u.email, u.firstName, u.lastName, u.profilePicture,
+               (SELECT content FROM Messages 
+                WHERE (senderEmail = ? AND receiverEmail = u.email) 
+                   OR (senderEmail = u.email AND receiverEmail = ?) 
+                ORDER BY timestamp DESC LIMIT 1) as lastMsg,
+               (SELECT timestamp FROM Messages 
+                WHERE (senderEmail = ? AND receiverEmail = u.email) 
+                   OR (senderEmail = u.email AND receiverEmail = ?) 
+                ORDER BY timestamp DESC LIMIT 1) as lastTime
         FROM Friends f
         JOIN Users u ON (
             CASE WHEN f.email1 = ? THEN u.email = f.email2
@@ -443,14 +451,27 @@ public class AuthenticationService {
             pstmt.setString(1, email);
             pstmt.setString(2, email);
             pstmt.setString(3, email);
+            pstmt.setString(4, email);
+            pstmt.setString(5, email);
+            pstmt.setString(6, email);
+            pstmt.setString(7, email);
             ResultSet rs = pstmt.executeQuery();
 
             StringBuilder sb = new StringBuilder();
             while (rs.next()) {
                 if (sb.length() > 0) sb.append(",");
+                String lastMsg = rs.getString("lastMsg");
+                String lastTime = rs.getString("lastTime");
+                
+                // Base64 encode the message content to safely include it in the comma/colon separated list
+                String encodedMsg = (lastMsg != null) ? java.util.Base64.getEncoder().encodeToString(lastMsg.getBytes(java.nio.charset.StandardCharsets.UTF_8)) : "";
+                
                 sb.append(rs.getString("email"))
                         .append(":").append(rs.getString("firstName"))
-                        .append(":").append(rs.getString("lastName"));
+                        .append(":").append(rs.getString("lastName"))
+                        .append(":").append(rs.getString("profilePicture") != null ? rs.getString("profilePicture") : "")
+                        .append(":").append(encodedMsg)
+                        .append(":").append(lastTime != null ? lastTime : "");
             }
             return sb.length() > 0 ? sb.toString() : "EMPTY";
 

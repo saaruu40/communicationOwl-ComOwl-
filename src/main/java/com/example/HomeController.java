@@ -16,7 +16,10 @@ import javafx.stage.Popup;
 import javafx.stage.Stage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import com.codes.util.FileMessageCodec;
 
 public class HomeController {
 
@@ -119,8 +122,19 @@ public class HomeController {
                     Label nameLabel = new Label(friend.getFirstName() + " " + friend.getLastName());
                     nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-                    Label lastMessageLabel = new Label(
-                            friend.getLastMessage() != null ? friend.getLastMessage() : "Tap to start chatting");
+                    String lastMsg = friend.getLastMessage();
+                    if (FileMessageCodec.isFileMessage(lastMsg)) {
+                        try {
+                            FileMessageCodec.Parsed parsed = FileMessageCodec.decode(lastMsg);
+                            lastMsg = "📎 " + parsed.filename();
+                        } catch (Exception e) {
+                            lastMsg = "📎 Attachment";
+                        }
+                    } else if (lastMsg == null || lastMsg.isBlank()) {
+                        lastMsg = "Tap to start chatting";
+                    }
+                    
+                    Label lastMessageLabel = new Label(lastMsg);
                     lastMessageLabel.setStyle("-fx-text-fill: #bcaeff; -fx-font-size: 11px;");
 
                     infoBox.getChildren().addAll(nameLabel, lastMessageLabel);
@@ -387,6 +401,38 @@ public class HomeController {
                                 friend.setFirstName(parts[1]);
                                 friend.setLastName(parts[2]);
                                 friend.setOnline(true);
+                                
+                                // Parse extended fields if available
+                                if (parts.length >= 6) {
+                                    String encodedMsg = parts[4];
+                                    String timestamp = parts[5];
+                                    
+                                    if (!encodedMsg.isEmpty()) {
+                                        try {
+                                            byte[] decodedBytes = java.util.Base64.getDecoder().decode(encodedMsg);
+                                            String lastMsg = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+                                            friend.setLastMessage(lastMsg);
+                                        } catch (Exception e) {
+                                            friend.setLastMessage("");
+                                        }
+                                    }
+                                    
+                                    if (!timestamp.isEmpty()) {
+                                        try {
+                                            // Format the timestamp if needed, or just use as is
+                                            // Assuming server timestamp is a full ISO string, we might want to prettify it
+                                            if (timestamp.contains("T")) {
+                                                LocalDateTime ldt = LocalDateTime.parse(timestamp);
+                                                friend.setLastMessageTime(ldt.format(DateTimeFormatter.ofPattern("h:mm a")));
+                                            } else {
+                                                friend.setLastMessageTime(timestamp);
+                                            }
+                                        } catch (Exception e) {
+                                            friend.setLastMessageTime("");
+                                        }
+                                    }
+                                }
+                                
                                 allFriends.add(friend);
                                 friendListView.getItems().add(friend);
                             }
@@ -437,6 +483,35 @@ public class HomeController {
     public void refreshFriendList() {
         loadFriendList();
         showTemporaryMessage("Refreshing friends list...");
+    }
+
+    /**
+     * Updates the last message for a friend in the UI list.
+     * Called when a message or attachment is sent or received.
+     */
+    public void updateFriendLastMessage(String email, String content) {
+        if (email == null) return;
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+        String timeStr = LocalDateTime.now().format(formatter);
+        
+        Platform.runLater(() -> {
+            boolean found = false;
+            // Update the Friend object in our lists
+            for (Friend f : allFriends) {
+                if (email.equalsIgnoreCase(f.getEmail())) {
+                    f.setLastMessage(content);
+                    f.setLastMessageTime(timeStr);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
+                // Force ListView to refresh its cells
+                friendListView.refresh();
+            }
+        });
     }
 
     @FXML

@@ -25,7 +25,6 @@ public class ProfileSettingsController {
 
     public static Popup currentPopup;
 
-    // Popup এর owner Stage খোঁজার helper method
     private Stage getMainStage() {
         return (Stage) Stage.getWindows().stream()
                 .filter(w -> w instanceof Stage && w.isShowing())
