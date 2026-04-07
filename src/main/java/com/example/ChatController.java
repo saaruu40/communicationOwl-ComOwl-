@@ -63,7 +63,7 @@ public class ChatController {
                 chatUserImage.setClip(clip);
             }
         } catch (Exception e) {
-            // Use default if resource not found
+            
         }
     }
 
@@ -91,7 +91,7 @@ public class ChatController {
                                 Message msg = new Message(sender, content, timestamp, isSent);
                                 addMessageToUI(msg);
                             } catch (Exception e) {
-                                // If timestamp parsing fails, use current time
+                                
                                 Message msg = new Message(sender, content, LocalDateTime.now(), isSent);
                                 addMessageToUI(msg);
                             }
@@ -192,12 +192,12 @@ public class ChatController {
                 true
         );
 
-        // Add to UI immediately
+        
         addMessageToUI(message);
         messageField.clear();
         scrollToBottom();
 
-        // Send to server
+        
         new Thread(() -> {
             String response = SocketClient.send("SEND_MESSAGE|" + currentUserEmail + "|" +
                     currentFriend.getEmail() + "|" + messageText);

@@ -154,7 +154,7 @@ public class App extends Application {
         stage.show();
     }
 
-    // ── Scene switcher (used by SignIn, SignUp, etc.) ─────────────────────────
+    
     static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
         if (primaryStage != null) {
@@ -193,7 +193,7 @@ public class App extends Application {
 
     @Override
     public void stop() {
-        // Graceful shutdown — webcam etc. unhooks naturally
+       
     }
 
     public static void main(String[] args) {

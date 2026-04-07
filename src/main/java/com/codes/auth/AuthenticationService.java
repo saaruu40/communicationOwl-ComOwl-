@@ -604,7 +604,7 @@ public class AuthenticationService {
         }
     }
 
-    // Get only private messages AFTER a given timestamp (incremental polling)
+    // Get only private messages AFTER a given timestamp (incremental polling) // porer shob msg niye ashe
     // Response format per line:  senderEmail|content|timestamp|text
     public String getMessagesSince(String email1, String email2, String sinceTimestamp) {
 
@@ -699,7 +699,7 @@ public class AuthenticationService {
     }
     public boolean createGroup(String groupId, String groupName, String creatorEmail) {
 
-        String sql = "INSERT INTO Groups (groupId, groupName, creatorEmail) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO Groups (groupId, groupName , creatorEmail) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

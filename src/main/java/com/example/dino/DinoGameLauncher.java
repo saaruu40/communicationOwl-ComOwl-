@@ -16,15 +16,7 @@ import javafx.stage.Stage;
 import javafx.scene.media.AudioClip;
 import java.net.URL;
 
-/**
- * Opens the Dino game in its own Stage.
- *
- * Key features:
- *  - SPACE → jump / start / restart
- *  - S key after Game Over → sends score as a chat message
- *  - "📤 Share Score" button → same as pressing S
- *  - Closing the window safely stops the loop; chat UI is unaffected.
- */
+
 public class DinoGameLauncher {
 
     /**
@@ -41,13 +33,13 @@ public class DinoGameLauncher {
         AudioClip gameOverSound = loadSound("/com/example/sounds/gameOver.mp3");
         AudioClip restartSound = loadSound("/com/example/sounds/restart.mp3");
 
-        // ── Canvas & game ────────────────────────────────────────────────
+        
         Canvas canvas = new Canvas(DinoGame.WIDTH, DinoGame.HEIGHT);
         GraphicsContext gc = canvas.getGraphicsContext2D();
         DinoGame game = new DinoGame();
         GameLoop loop = new GameLoop(game, gc);
 
-        // ── Bottom toolbar ───────────────────────────────────────────────
+        
         Button shareBtn = new Button("📤  Share Score");
         shareBtn.setFont(Font.font("DM Sans", FontWeight.BOLD, 13));
         shareBtn.setStyle(
@@ -90,26 +82,26 @@ public class DinoGameLauncher {
         VBox root = new VBox(canvas, toolbar);
         root.setStyle("-fx-background-color: #0f0f1a;");
 
-        // ── Scene ────────────────────────────────────────────────────────
+        
         Scene scene = new Scene(root);
 
-        // ── Key handler ──────────────────────────────────────────────────
+        
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.SPACE) {
                 if (game.onSpacePressed() && jumpSound != null) {
                     jumpSound.play();
                 }
-                // Enable share button after first game over
+               
                 if (game.isGameOver()) shareBtn.setDisable(false);
             } else if (e.getCode() == KeyCode.S && game.isGameOver()) {
                 sendScore(chatRoom, game.getScore(), chatTarget);
             }
         });
 
-        // ── Button actions ───────────────────────────────────────────────
+        
         restartBtn.setOnAction(e -> {
             if (restartSound != null) restartSound.play();
-            game.onSpacePressed(); // restarts when game over; starts when waiting
+            game.onSpacePressed(); 
             shareBtn.setDisable(true);
             canvas.requestFocus();
         });
@@ -126,14 +118,7 @@ public class DinoGameLauncher {
             canvas.requestFocus();
         });
 
-        // Re-enable share after every game-over (polled via loop)
-        // We hook into the game-over state via an AnimationTimer trick:
-        // the share button is enabled in the key handler and restart button handler.
-        // Additionally, GameLoop already calls render each frame; we check game state
-        // after render by adding a listener on the canvas.
-        // Simple approach: enable the button whenever game is over (checked via
-        // a post-render hook inside the game loop).
-        // We do this cleanly via a wrapper:
+       
         GameLoop wrappedLoop = new GameLoop(game, gc) {
             boolean wasGameOver = false;
             @Override public void start() {
@@ -148,14 +133,14 @@ public class DinoGameLauncher {
                         }
                         wasGameOver = isGameOver;
 
-                        // Keep share button in sync with game state
+                        
                         shareBtn.setDisable(!isGameOver);
                     }
                 }.start();
             }
         };
 
-        // ── Stage ────────────────────────────────────────────────────────
+        
         Stage stage = new Stage();
         stage.setTitle("🦕  Dino Rush" +
             (chatTarget != null && !chatTarget.isBlank() ? " — chatting with " + chatTarget : ""));
@@ -167,13 +152,10 @@ public class DinoGameLauncher {
         canvas.requestFocus();
         root.requestFocus();
 
-        wrappedLoop.start(); // starts the real animationtimer inside
+        wrappedLoop.start(); 
     }
 
-    /**
-     * Sends the dino score as a text message into the active 1-on-1 chat.
-     * Does nothing if no chat is open.
-     */
+    
     private static void sendScore(ChatRoomController chatRoom, int score, String chatTarget) {
         if (chatRoom == null) return;
         String msg = "🦕 I just scored " + score + " in Dino Rush! Can you beat it?";

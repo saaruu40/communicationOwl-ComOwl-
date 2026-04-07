@@ -2,9 +2,7 @@ package com.example;
 
 import java.time.LocalDateTime;
 
-/**
- * Represents a single chat message in the PingOwl application.
- */
+
 public class ChatMessage {
     private String senderEmail;
     private String recipientEmail;

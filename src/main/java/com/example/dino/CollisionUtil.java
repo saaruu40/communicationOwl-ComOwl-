@@ -1,9 +1,6 @@
 package com.example.dino;
 
-/**
- * Simple Axis-Aligned Bounding Box (AABB) collision check.
- * An inset margin makes the hitbox a bit smaller than the visual for fair play.
- */
+
 public class CollisionUtil {
 
     public static boolean checkCollision(Player player, Obstacle obstacle) {

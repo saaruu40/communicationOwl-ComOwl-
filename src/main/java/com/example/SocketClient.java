@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -73,9 +74,9 @@ public class SocketClient {
      */
     public static String send(String command) {
         try (Socket socket = createSocket();
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                PrintWriter out = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                 BufferedReader in = new BufferedReader(
-                        new InputStreamReader(socket.getInputStream()))) {
+                        new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
 
             out.println(command);
             StringBuilder response = new StringBuilder();
@@ -108,9 +109,9 @@ public class SocketClient {
             closePersistentConnection();
 
             persistentSocket = createSocket();
-            persistentOut = new PrintWriter(persistentSocket.getOutputStream(), true);
+            persistentOut = new PrintWriter(new java.io.OutputStreamWriter(persistentSocket.getOutputStream(), StandardCharsets.UTF_8), true);
             persistentIn = new BufferedReader(
-                    new InputStreamReader(persistentSocket.getInputStream()));
+                    new InputStreamReader(persistentSocket.getInputStream(), StandardCharsets.UTF_8));
 
             currentUserEmail = userEmail;
 

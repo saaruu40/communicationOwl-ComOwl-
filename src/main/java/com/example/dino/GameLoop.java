@@ -3,10 +3,7 @@ package com.example.dino;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
-/**
- * Wraps JavaFX AnimationTimer to drive the game loop.
- * Calls update() then render() on every display frame (~60 fps).
- */
+
 public class GameLoop {
 
     private final AnimationTimer timer;

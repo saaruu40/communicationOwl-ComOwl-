@@ -33,28 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-/**
- * UDP video+audio call service.
- *
- * Frame packetization protocol
- * ─────────────────────────────
- * Large JPEG frames are split into 1200-byte chunks (well under the 1500-byte
- * Ethernet MTU). Each chunk shares a 7-byte fixed header:
- *
- *   byte[0]     = PACKET_VIDEO_CHUNK (0x01)
- *   byte[1..4]  = 32-bit frame sequence number (big-endian, always > 0)
- *   byte[5]     = chunk index within this frame (0-based)
- *   byte[6]     = total chunks in this frame
- *   byte[7..]   = JPEG payload slice
- *
- * The receiver accumulates chunks keyed by frame sequence number until all
- * arrive, then reassembles and decodes. Stale partial frames are discarded
- * automatically (we never block on a missing chunk).
- *
- * Audio packets are still sent as a single datagram with a 1-byte type prefix:
- *   byte[0]    = PACKET_AUDIO (0x02)
- *   byte[1..]  = raw PCM audio
- */
+
 public class VideoCallService {
 
     // ── Packet type bytes ──────────────────────────────────────────────────
