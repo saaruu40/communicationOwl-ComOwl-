@@ -44,7 +44,7 @@ All users must be connected to the same Wi-Fi or local network to communicate.
 1. Clone the repository
 
    ```
-   git clone repo
+   git clone https://github.com/saaruu40/communicationOwl-ComOwl-.git
    ```
 
 2. Open in your preferred IDE (IntelliJ / VS Code)
